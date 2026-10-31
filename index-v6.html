@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Review Measure v6 — unique-name diagnostic (clone only)</title>
+<style>
+  html,body{margin:0;padding:0;background:#fff;color:#1a1a1a;font-family:Arial,sans-serif;}
+  #wrap{padding:10px;}
+  h1{font-size:15px;margin:0 0 6px;}
+  h2{font-size:13px;margin:12px 0 4px;}
+  #status{font-size:13px;margin:0 0 8px;color:#444;}
+  button{font-size:13px;padding:6px 12px;margin:0 6px 8px 0;cursor:pointer;}
+  table{border-collapse:collapse;width:100%;font-size:12px;}
+  th,td{border:1px solid #bbb;padding:3px 5px;vertical-align:top;text-align:left;}
+  th{background:#eee;}
+  td.qid{font-weight:bold;white-space:nowrap;}
+  td.val{font-family:Menlo,Consolas,monospace;word-break:break-word;white-space:pre-wrap;}
+  tr.empty td{color:#999;}
+  #log{font-family:Menlo,Consolas,monospace;font-size:11px;white-space:pre-wrap;word-break:break-word;border:1px solid #bbb;padding:6px;background:#fafafa;max-height:600px;overflow:auto;}
+</style>
+<script src="https://cdn.jotfor.ms/s/umd/latest/for-custom-widgets.js"></script>
+</head>
+<body>
+<div id="wrap">
+  <h1>Review Measure v6 — unique-name diagnostic (CLONE ONLY)</h1>
+  <p id="status">Waiting for Jotform ready…</p>
+  <button id="byname" type="button">READ ALL BY UNIQUE NAME</button>
+  <button id="byid" type="button">READ BY ID (plain)</button>
+  <button id="byidinput" type="button">READ BY ID (input_ PREFIXED)</button>
+  <h2>Raw log</h2>
+  <div id="log">(none yet)</div>
+  <h2>Latest value per field</h2>
+  <table>
+    <thead><tr><th>QID</th><th>Label</th><th>Value (JSON)</th><th>Source</th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+</div>
+<script>
+(function(){
+  "use strict";
+  var FIELDS = [
+    [7,"howCan","Reason"],[33,"whichBest","Status"],[62,"whoIs","Provider"],
+    [63,"typeA63","Provider Other"],[15,"howMany","People"],[39,"whatIs39","ZIP"],
+    [34,"whatCounty","County"],[16,"whatIs","Income"],[17,"howMany17","Tax Household"],
+    [19,"whatAre","Priorities"],[44,"areYou44","Addon Gate"],[35,"whatWould","Addons"],
+    [20,"ideallyWhat","Premium v20"],[21,"whatMonthly21","Premium v21"],
+    [22,"whatMonthly22","Premium v22"],[23,"whatMonthly23","Premium v23"],
+    [24,"whatMonthly24","Premium v24"],[42,"whenWould42","Timeframe"],
+    [72,"typeA72","Calendar 45"],[73,"typeA73","Calendar 46+"],
+    [10,"name","Name"],[11,"phoneNumber","Phone"],[12,"email","E-mail"],
+    [55,"yourPrivacy","Privacy"],[56,"consentTo56","Consent"],
+    [28,"appointment","Appointment"],[30,"typeA","Hear About"],
+    [37,"whoCan","Referred By"],[36,"phoneNumber36","Referrer Phone"],
+    [89,"mirrorReason","MIRROR reason"],[90,"mirrorStatus","MIRROR status"],
+    [91,"mirrorIncome","MIRROR income"],[92,"mirrorPriorities","MIRROR priorities"],
+    [93,"mirrorAddon","MIRROR addon gate"],[94,"mirrorAddons","MIRROR addons"],
+    [95,"mirrorPremium","MIRROR premium"],[96,"mirrorTimeframe","MIRROR timeframe"],
+    [97,"mirrorAppointment","MIRROR appointment"],
+    [98,"typeA98","MIRROR start date 45"],[99,"typeA99","MIRROR start date 46"]
+  ];
+  var statusEl = document.getElementById('status');
+  var rowsEl = document.getElementById('rows');
+  var logEl = document.getElementById('log');
+  var latest = {};
+  var lines = [];
+  var connected = false;
+  var subs = 0;
+
+  function fullKey(f){ return "q"+f[0]+"_"+f[1]; }
+  function resize(){
+    try{
+      if(window.JFCustomWidget && JFCustomWidget.requestFrameResize){
+        JFCustomWidget.requestFrameResize({ height: Math.ceil(document.body.getBoundingClientRect().height) + 24 });
+      }
+    }catch(e){}
+  }
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function stringify(v){ try{ return JSON.stringify(v); }catch(e){ return String(v); } }
+  function log(tag, payload){
+    lines.push(tag + " => " + stringify(payload).slice(0, 1200));
+    if(lines.length > 150) lines.shift();
+    logEl.textContent = lines.join("\n\n");
+  }
+  function isEmptyV(v){
+    return v === null || v === undefined || v === "" ||
+      (typeof v === "object" && Object.keys(v).length === 0);
+  }
+  function put(qid, value, source){
+    if(isEmptyV(value) && latest[qid] && !isEmptyV(latest[qid].value)) return;
+    latest[qid] = { value: value, source: source };
+    render();
+  }
+  function render(){
+    var html = "", filled = 0;
+    FIELDS.forEach(function(f){
+      var r = latest[String(f[0])];
+      var has = r && !isEmptyV(r.value);
+      if(has) filled++;
+      html += '<tr class="'+(has?'':'empty')+'"><td class="qid">'+f[0]+'</td><td>'+esc(f[2])+'</td>'
+        + '<td class="val">'+(r? esc(stringify(r.value).slice(0,400)) : '—')+'</td>'
+        + '<td>'+(r? esc(r.source) : '—')+'</td></tr>';
+    });
+    rowsEl.innerHTML = html;
+    statusEl.textContent = 'v6 ready. Fields with values: '+filled+' of '+FIELDS.length
+      + '. Subscriptions: '+subs+'. Last update: '+new Date().toLocaleTimeString();
+    resize();
+  }
+  function absorb(data, source){
+    if(!data) return;
+    var bySelector = {};
+    FIELDS.forEach(function(f){
+      bySelector[String(f[0])] = f[0];
+      bySelector["input_"+f[0]] = f[0];
+      bySelector[fullKey(f)] = f[0];
+    });
+    if(Array.isArray(data)){
+      data.forEach(function(item){
+        if(item && typeof item === "object"){
+          var k = item.selector || item.id || item.name || item.fieldId;
+          if(k != null && bySelector[String(k)] != null){
+            put(String(bySelector[String(k)]), (item.value !== undefined ? item.value : item), source);
+          }
+        }
+      });
+      return;
+    }
+    if(typeof data === "object"){
+      // The bridge wraps replies: {eventID, type, data:[...]} — unwrap.
+      if(data.data) { absorb(data.data, source); return; }
+      Object.keys(data).forEach(function(k){
+        if(bySelector[k] != null) put(String(bySelector[k]), data[k], source);
+      });
+    }
+  }
+  function subscribeAll(){
+    if(typeof JFCustomWidget.listenFromField !== "function"){ log("listenFromField", "NOT A FUNCTION"); return; }
+    FIELDS.forEach(function(f){
+      var qid = String(f[0]);
+      try{
+        JFCustomWidget.listenFromField("input_"+qid, "change", function(p){ log("EVT input_"+qid, p); put(qid, p, "evt:input"); });
+        subs++;
+      }catch(e){ log("SUB input_"+qid+" ERR", String(e)); }
+      try{
+        JFCustomWidget.listenFromField(fullKey(f), "change", function(p){ log("EVT "+fullKey(f), p); put(qid, p, "evt:name"); });
+        subs++;
+      }catch(e){ log("SUB "+fullKey(f)+" ERR", String(e)); }
+    });
+    render();
+  }
+  function readByName(){
+    if(!connected) return;
+    var names = FIELDS.map(fullKey);
+    try{
+      JFCustomWidget.getFieldsValueByName(names, function(d){ log("READ-BY-NAME batch", d); absorb(d, "read:name"); render(); });
+    }catch(e){ log("READ-BY-NAME ERR", String(e)); }
+    names.forEach(function(n, i){
+      try{
+        JFCustomWidget.getFieldsValueByName([n], function(d){ log("READ-BY-NAME single "+n, d); absorb(d, "read:name"); render(); });
+      }catch(e){ log("READ-BY-NAME single "+n+" ERR", String(e)); }
+    });
+  }
+  function readByIdPrefixed(prefix){
+    if(!connected) return;
+    FIELDS.forEach(function(f){
+      var arg = prefix ? "input_"+f[0] : String(f[0]);
+      try{
+        JFCustomWidget.getFieldsValueById([arg], function(d){
+          log("READ-BY-ID "+arg, d); absorb(d, prefix ? "read:idprefixed" : "read:id"); render();
+        });
+      }catch(e){ log("READ-BY-ID "+arg+" ERR", String(e)); }
+    });
+  }
+  document.getElementById('byname').addEventListener('click', readByName);
+  document.getElementById('byid').addEventListener('click', function(){ readByIdPrefixed(false); });
+  document.getElementById('byidinput').addEventListener('click', function(){ readByIdPrefixed(true); });
+
+  if(window.JFCustomWidget && typeof JFCustomWidget.subscribe === "function"){
+    JFCustomWidget.subscribe("ready", function(){
+      connected = true;
+      subscribeAll();
+      render();
+    });
+  } else {
+    statusEl.textContent = "JFCustomWidget unavailable — open inside a Jotform form.";
+  }
+})();
+</script>
+</body>
+</html>

@@ -3,186 +3,224 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Review Measure v6 — unique-name diagnostic (clone only)</title>
+<title>Review Answers — display widget (clone build)</title>
 <style>
-  html,body{margin:0;padding:0;background:#fff;color:#1a1a1a;font-family:Arial,sans-serif;}
-  #wrap{padding:10px;}
-  h1{font-size:15px;margin:0 0 6px;}
-  h2{font-size:13px;margin:12px 0 4px;}
-  #status{font-size:13px;margin:0 0 8px;color:#444;}
-  button{font-size:13px;padding:6px 12px;margin:0 6px 8px 0;cursor:pointer;}
-  table{border-collapse:collapse;width:100%;font-size:12px;}
-  th,td{border:1px solid #bbb;padding:3px 5px;vertical-align:top;text-align:left;}
-  th{background:#eee;}
-  td.qid{font-weight:bold;white-space:nowrap;}
-  td.val{font-family:Menlo,Consolas,monospace;word-break:break-word;white-space:pre-wrap;}
-  tr.empty td{color:#999;}
-  #log{font-family:Menlo,Consolas,monospace;font-size:11px;white-space:pre-wrap;word-break:break-word;border:1px solid #bbb;padding:6px;background:#fafafa;max-height:600px;overflow:auto;}
+  :root{
+    --forest:#244536; --gold:#C3A263; --ivory:#F8F6F0; --sage:#DCE5DA;
+    --charcoal:#303849; --answer:#587C46; --ink:#182D3C;
+  }
+  html,body{margin:0;padding:0;background:transparent;}
+  body{font-family:'Caudex',Georgia,serif;color:var(--charcoal);}
+  #reviewRoot{background:#fff;border:1px solid var(--sage);border-radius:14px;
+    padding:22px 20px 18px;max-width:640px;margin:0 auto;box-sizing:border-box;}
+  h1.welcome{font-size:21px;line-height:1.3;color:var(--forest);margin:0 0 8px;font-weight:700;}
+  p.welcome-body{font-size:14.5px;line-height:1.55;margin:0 0 18px;color:var(--charcoal);}
+  .row{padding:10px 0;border-top:1px solid var(--ivory);}
+  .row:first-of-type{border-top:none;}
+  .q{font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--gold);
+     font-weight:700;margin:0 0 3px;}
+  .a{font-size:16px;line-height:1.45;color:var(--charcoal);margin:0;white-space:pre-wrap;}
+  .a ul{margin:2px 0 0;padding-left:18px;}
+  .a li{margin:1px 0;}
+  .bubble{background:var(--ivory);border:1px solid var(--sage);border-radius:12px;
+    padding:14px 16px;margin:16px 0 6px;}
+  .bubble h2{font-size:17px;color:var(--forest);margin:0 0 5px;font-weight:700;}
+  .bubble p{font-size:14.5px;line-height:1.55;margin:0;}
+  .contact{margin-top:14px;border-top:2px solid var(--sage);padding-top:12px;}
+  .loading{font-size:14px;color:#777;margin:6px 0;}
 </style>
 <script src="https://cdn.jotfor.ms/s/umd/latest/for-custom-widgets.js"></script>
 </head>
 <body>
-<div id="wrap">
-  <h1>Review Measure v6 — unique-name diagnostic (CLONE ONLY)</h1>
-  <p id="status">Waiting for Jotform ready…</p>
-  <button id="byname" type="button">READ ALL BY UNIQUE NAME</button>
-  <button id="byid" type="button">READ BY ID (plain)</button>
-  <button id="byidinput" type="button">READ BY ID (input_ PREFIXED)</button>
-  <h2>Raw log</h2>
-  <div id="log">(none yet)</div>
-  <h2>Latest value per field</h2>
-  <table>
-    <thead><tr><th>QID</th><th>Label</th><th>Value (JSON)</th><th>Source</th></tr></thead>
-    <tbody id="rows"></tbody>
-  </table>
+<div id="reviewRoot">
+  <p class="loading" id="loadingMsg">Loading your answers…</p>
+  <div id="content" style="display:none">
+    <h1 class="welcome">Let's Make Health Coverage Simpler</h1>
+    <p class="welcome-body">Here's a look at the information you've shared. Take a moment to make sure everything accurately reflects your needs and preferences. You also have the option to print a copy of your responses for your records before moving forward.</p>
+    <div id="rows"></div>
+    <div class="bubble" id="bubble" style="display:none">
+      <h2 id="bubbleHeading"></h2>
+      <p id="bubbleBody"></p>
+    </div>
+    <div class="contact" id="contactRows"></div>
+  </div>
 </div>
 <script>
 (function(){
   "use strict";
-  var FIELDS = [
-    [7,"howCan","Reason"],[33,"whichBest","Status"],[62,"whoIs","Provider"],
-    [63,"typeA63","Provider Other"],[15,"howMany","People"],[39,"whatIs39","ZIP"],
-    [34,"whatCounty","County"],[16,"whatIs","Income"],[17,"howMany17","Tax Household"],
-    [19,"whatAre","Priorities"],[44,"areYou44","Addon Gate"],[35,"whatWould","Addons"],
-    [20,"ideallyWhat","Premium v20"],[21,"whatMonthly21","Premium v21"],
-    [22,"whatMonthly22","Premium v22"],[23,"whatMonthly23","Premium v23"],
-    [24,"whatMonthly24","Premium v24"],[42,"whenWould42","Timeframe"],
-    [72,"typeA72","Calendar 45"],[73,"typeA73","Calendar 46+"],
-    [10,"name","Name"],[11,"phoneNumber","Phone"],[12,"email","E-mail"],
-    [55,"yourPrivacy","Privacy"],[56,"consentTo56","Consent"],
-    [28,"appointment","Appointment"],[30,"typeA","Hear About"],
-    [37,"whoCan","Referred By"],[36,"phoneNumber36","Referrer Phone"],
-    [89,"mirrorReason","MIRROR reason"],[90,"mirrorStatus","MIRROR status"],
-    [91,"mirrorIncome","MIRROR income"],[92,"mirrorPriorities","MIRROR priorities"],
-    [93,"mirrorAddon","MIRROR addon gate"],[94,"mirrorAddons","MIRROR addons"],
-    [95,"mirrorPremium","MIRROR premium"],[96,"mirrorTimeframe","MIRROR timeframe"],
-    [97,"mirrorAppointment","MIRROR appointment"],
-    [98,"typeA98","MIRROR start date 45"],[99,"typeA99","MIRROR start date 46"]
-  ];
-  var statusEl = document.getElementById('status');
-  var rowsEl = document.getElementById('rows');
-  var logEl = document.getElementById('log');
-  var latest = {};
-  var lines = [];
-  var connected = false;
-  var subs = 0;
+  /* Read map: direct unique names for bridge-readable fields; MIRROR
+     unique names for choice/appointment answers (proven on clone
+     263031945610148, Oct 31 2026 — see review-measure-results-oct-31.md).
+     Start date: mirrors 98/99 primary; calendar events (input_72/73)
+     as fallback. */
+  var NAMES = {
+    reason:"q89_mirrorReason", status:"q90_mirrorStatus",
+    people:"q15_howMany", zip:"q39_whatIs39", county:"q34_whatCounty",
+    income:"q91_mirrorIncome", taxHousehold:"q17_howMany17",
+    priorities:"q92_mirrorPriorities", addonGate:"q93_mirrorAddon",
+    addons:"q94_mirrorAddons", premium:"q95_mirrorPremium",
+    timeframe:"q96_mirrorTimeframe",
+    startDate45:"q98_typeA98", startDate46:"q99_typeA99",
+    fullName:"q10_name", phone:"q11_phoneNumber", email:"q12_email",
+    appointment:"q97_mirrorAppointment"
+  };
+  var BUBBLES = {
+    within45:{ heading:"Let's Get Connected!",
+      body:"Expect a call from us soon to discuss your coverage preferences, answer any questions you may have, and explore your options." },
+    over45:{ heading:"Let's Stay in Touch",
+      body:"Thank you for sharing your coverage preferences! Since your desired start date is a little further out, we'll reach out closer to your preferred date to review your options and help you take the next step." }
+  };
+  var values = {};       // key -> string
+  var calendarEvt = {};  // 72/73 -> value from change events (fallback)
 
-  function fullKey(f){ return "q"+f[0]+"_"+f[1]; }
   function resize(){
     try{
       if(window.JFCustomWidget && JFCustomWidget.requestFrameResize){
-        JFCustomWidget.requestFrameResize({ height: Math.ceil(document.body.getBoundingClientRect().height) + 24 });
+        JFCustomWidget.requestFrameResize({ height: document.getElementById('reviewRoot').offsetHeight + 8 });
       }
     }catch(e){}
   }
-  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-  function stringify(v){ try{ return JSON.stringify(v); }catch(e){ return String(v); } }
-  function log(tag, payload){
-    lines.push(tag + " => " + stringify(payload).slice(0, 1200));
-    if(lines.length > 150) lines.shift();
-    logEl.textContent = lines.join("\n\n");
-  }
-  function isEmptyV(v){
-    return v === null || v === undefined || v === "" ||
+  function isEmpty(v){
+    return v === null || v === undefined || (typeof v === "string" && v.trim() === "") ||
       (typeof v === "object" && Object.keys(v).length === 0);
   }
-  function put(qid, value, source){
-    if(isEmptyV(value) && latest[qid] && !isEmptyV(latest[qid].value)) return;
-    latest[qid] = { value: value, source: source };
-    render();
+  function toText(v){
+    if(isEmpty(v)) return "";
+    if(typeof v === "string") return v;
+    if(Array.isArray(v)) return v.filter(function(x){ return !isEmpty(x); }).join(", ");
+    if(typeof v === "object"){
+      // fullname / phone style objects: join their non-empty parts
+      var parts = [];
+      ["first","middle","last","full","area","phone","number"].forEach(function(k){
+        if(!isEmpty(v[k])) parts.push(String(v[k]));
+      });
+      if(parts.length) return parts.join(" ");
+      return Object.keys(v).map(function(k){ return v[k]; }).filter(function(x){ return !isEmpty(x); }).join(" ");
+    }
+    return String(v);
   }
+  function formatDate(raw){
+    // Calendar widgets display MM.DD.YYYY to the person; mirrors may hold
+    // ISO (yyyy-mm-dd) — normalize to what the person saw.
+    var s = toText(raw).trim();
+    var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if(m) return m[2]+"."+m[3]+"."+m[1];
+    return s;
+  }
+  function isOver45(){
+    var tf = (values.timeframe || "");
+    return /more than/i.test(tf);
+  }
+  function startDate(){
+    var v = !isEmpty(values.startDate45) ? values.startDate45 : values.startDate46;
+    if(isEmpty(v)) v = calendarEvt["72"] || calendarEvt["73"] || "";
+    return formatDate(v);
+  }
+
+  function rowHTML(heading, answer, asList){
+    if(isEmpty(answer)) return "";   /* hide unanswered rows (switchable rule) */
+    var body;
+    if(asList){
+      var items = String(answer).split(/,\s*/).filter(Boolean);
+      body = "<ul>" + items.map(function(i){ return "<li>"+escapeHtml(i)+"</li>"; }).join("") + "</ul>";
+    } else {
+      body = escapeHtml(String(answer));
+    }
+    return '<div class="row"><p class="q">'+escapeHtml(heading)+'</p><div class="a">'+body+'</div></div>';
+  }
+  function escapeHtml(s){
+    return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+
   function render(){
-    var html = "", filled = 0;
-    FIELDS.forEach(function(f){
-      var r = latest[String(f[0])];
-      var has = r && !isEmptyV(r.value);
-      if(has) filled++;
-      html += '<tr class="'+(has?'':'empty')+'"><td class="qid">'+f[0]+'</td><td>'+esc(f[2])+'</td>'
-        + '<td class="val">'+(r? esc(stringify(r.value).slice(0,400)) : '—')+'</td>'
-        + '<td>'+(r? esc(r.source) : '—')+'</td></tr>';
-    });
-    rowsEl.innerHTML = html;
-    statusEl.textContent = 'v6 ready. Fields with values: '+filled+' of '+FIELDS.length
-      + '. Subscriptions: '+subs+'. Last update: '+new Date().toLocaleTimeString();
+    var rows = "";
+    rows += rowHTML("Reason for Your Inquiry", values.reason);
+    rows += rowHTML("Current Insurance Status", values.status);
+    rows += rowHTML("Coverage Requested For", values.people);
+    rows += rowHTML("ZIP Code", values.zip);
+    rows += rowHTML("County", values.county);
+    rows += rowHTML("Estimated Annual Household Income", values.income);
+    rows += rowHTML("Tax Household Size", values.taxHousehold);
+    rows += rowHTML("What Matters Most", values.priorities, true);
+    rows += rowHTML("Are you interested in exploring additional coverage?", values.addonGate);
+    rows += rowHTML("Additional Coverage Preferences", values.addons, true);
+    rows += rowHTML("Target Monthly Premium", values.premium);
+    rows += rowHTML("Preferred Coverage Timeframe", values.timeframe);
+    rows += rowHTML("Preferred Coverage Start Date", startDate());
+    document.getElementById('rows').innerHTML = rows;
+
+    var over = isOver45();
+    var b = over ? BUBBLES.over45 : BUBBLES.within45;
+    var bubble = document.getElementById('bubble');
+    if(!isEmpty(values.timeframe)){
+      document.getElementById('bubbleHeading').textContent = b.heading;
+      document.getElementById('bubbleBody').textContent = b.body;
+      bubble.style.display = "";
+    } else {
+      bubble.style.display = "none";
+    }
+
+    var contact = "";
+    contact += rowHTML("Name", values.fullName);
+    contact += rowHTML("Phone Number", values.phone);
+    contact += rowHTML("E-mail", values.email);
+    if(!over) contact += rowHTML("Appointment Details", values.appointment);
+    document.getElementById('contactRows').innerHTML = contact;
+
+    document.getElementById('loadingMsg').style.display = "none";
+    document.getElementById('content').style.display = "";
     resize();
   }
-  function absorb(data, source){
+
+  function absorb(data){
     if(!data) return;
-    var bySelector = {};
-    FIELDS.forEach(function(f){
-      bySelector[String(f[0])] = f[0];
-      bySelector["input_"+f[0]] = f[0];
-      bySelector[fullKey(f)] = f[0];
-    });
     if(Array.isArray(data)){
       data.forEach(function(item){
         if(item && typeof item === "object"){
-          var k = item.selector || item.id || item.name || item.fieldId;
-          if(k != null && bySelector[String(k)] != null){
-            put(String(bySelector[String(k)]), (item.value !== undefined ? item.value : item), source);
-          }
+          var sel = item.selector || item.name || item.id;
+          Object.keys(NAMES).forEach(function(k){
+            if(NAMES[k] === sel && !isEmpty(item.value)) values[k] = toText(item.value);
+          });
         }
       });
       return;
     }
     if(typeof data === "object"){
-      // The bridge wraps replies: {eventID, type, data:[...]} — unwrap.
-      if(data.data) { absorb(data.data, source); return; }
-      Object.keys(data).forEach(function(k){
-        if(bySelector[k] != null) put(String(bySelector[k]), data[k], source);
+      if(data.data){ absorb(data.data); return; }
+      Object.keys(data).forEach(function(sel){
+        Object.keys(NAMES).forEach(function(k){
+          if(NAMES[k] === sel && !isEmpty(data[sel])) values[k] = toText(data[sel]);
+        });
       });
     }
   }
-  function subscribeAll(){
-    if(typeof JFCustomWidget.listenFromField !== "function"){ log("listenFromField", "NOT A FUNCTION"); return; }
-    FIELDS.forEach(function(f){
-      var qid = String(f[0]);
-      try{
-        JFCustomWidget.listenFromField("input_"+qid, "change", function(p){ log("EVT input_"+qid, p); put(qid, p, "evt:input"); });
-        subs++;
-      }catch(e){ log("SUB input_"+qid+" ERR", String(e)); }
-      try{
-        JFCustomWidget.listenFromField(fullKey(f), "change", function(p){ log("EVT "+fullKey(f), p); put(qid, p, "evt:name"); });
-        subs++;
-      }catch(e){ log("SUB "+fullKey(f)+" ERR", String(e)); }
-    });
-    render();
-  }
-  function readByName(){
-    if(!connected) return;
-    var names = FIELDS.map(fullKey);
+  function refresh(){
+    if(!window.JFCustomWidget) return;
+    var names = Object.keys(NAMES).map(function(k){ return NAMES[k]; });
     try{
-      JFCustomWidget.getFieldsValueByName(names, function(d){ log("READ-BY-NAME batch", d); absorb(d, "read:name"); render(); });
-    }catch(e){ log("READ-BY-NAME ERR", String(e)); }
-    names.forEach(function(n, i){
-      try{
-        JFCustomWidget.getFieldsValueByName([n], function(d){ log("READ-BY-NAME single "+n, d); absorb(d, "read:name"); render(); });
-      }catch(e){ log("READ-BY-NAME single "+n+" ERR", String(e)); }
-    });
+      JFCustomWidget.getFieldsValueByName(names, function(d){ absorb(d); render(); });
+    }catch(e){ render(); }
+    setTimeout(render, 400);
   }
-  function readByIdPrefixed(prefix){
-    if(!connected) return;
-    FIELDS.forEach(function(f){
-      var arg = prefix ? "input_"+f[0] : String(f[0]);
-      try{
-        JFCustomWidget.getFieldsValueById([arg], function(d){
-          log("READ-BY-ID "+arg, d); absorb(d, prefix ? "read:idprefixed" : "read:id"); render();
-        });
-      }catch(e){ log("READ-BY-ID "+arg+" ERR", String(e)); }
-    });
-  }
-  document.getElementById('byname').addEventListener('click', readByName);
-  document.getElementById('byid').addEventListener('click', function(){ readByIdPrefixed(false); });
-  document.getElementById('byidinput').addEventListener('click', function(){ readByIdPrefixed(true); });
 
   if(window.JFCustomWidget && typeof JFCustomWidget.subscribe === "function"){
     JFCustomWidget.subscribe("ready", function(){
-      connected = true;
-      subscribeAll();
-      render();
+      // Fallback: catch calendar dates live if their mirrors ever miss.
+      ["72","73"].forEach(function(qid){
+        try{
+          JFCustomWidget.listenFromField("input_"+qid, "change", function(p){
+            if(!isEmpty(p)) calendarEvt[qid] = p;
+            render();
+          });
+        }catch(e){}
+      });
+      refresh();
+      setTimeout(refresh, 1200);
     });
+    document.addEventListener("visibilitychange", function(){ if(!document.hidden) refresh(); });
+    window.addEventListener("focus", refresh);
   } else {
-    statusEl.textContent = "JFCustomWidget unavailable — open inside a Jotform form.";
+    document.getElementById('loadingMsg').textContent = "Open this review inside the form to see your answers.";
   }
 })();
 </script>

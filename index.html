@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Review Answers — display widget (clone build)</title>
+<title>Review Answers — display widget v1.3 (clone build)</title>
 <style>
   :root{
     --forest:#244536; --gold:#C3A263; --ivory:#F8F6F0; --sage:#DCE5DA;
@@ -110,8 +110,13 @@
     return /more than/i.test(tf);
   }
   function startDate(){
-    var v = !isEmpty(values.startDate45) ? values.startDate45 : values.startDate46;
-    if(isEmpty(v)) v = calendarEvt["72"] || calendarEvt["73"] || "";
+    /* Branch decides which date counts: the other branch's calendar
+       keeps its old answer in its mirror after a mid-form switch, so
+       never fall across branches. */
+    var v, evt;
+    if(isOver45()){ v = values.startDate46; evt = calendarEvt["73"]; }
+    else { v = values.startDate45; evt = calendarEvt["72"]; }
+    if(isEmpty(v)) v = evt || "";
     return formatDate(v);
   }
 

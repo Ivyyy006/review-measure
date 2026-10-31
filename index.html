@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Review Answers — display widget v1.3 (clone build)</title>
+<title>Review Answers — display widget v1.4 (clone build)</title>
 <style>
   :root{
     --forest:#244536; --gold:#C3A263; --ivory:#F8F6F0; --sage:#DCE5DA;
@@ -41,6 +41,7 @@
       <p id="bubbleBody"></p>
     </div>
     <div class="contact" id="contactRows"></div>
+    <div id="referralRows"></div>
   </div>
 </div>
 <script>
@@ -60,7 +61,8 @@
     timeframe:"q96_mirrorTimeframe",
     startDate45:"q98_typeA98", startDate46:"q99_typeA99",
     fullName:"q10_name", phone:"q11_phoneNumber", email:"q12_email",
-    appointment:"q97_mirrorAppointment"
+    appointment:"q97_mirrorAppointment",
+    referredBy:"q37_whoCan", referrerPhone:"q36_phoneNumber36"
   };
   var BUBBLES = {
     within45:{ heading:"Let's Get Connected!",
@@ -169,6 +171,11 @@
     contact += rowHTML("E-mail", values.email);
     if(!over) contact += rowHTML("Appointment Details", values.appointment);
     document.getElementById('contactRows').innerHTML = contact;
+
+    var referral = "";
+    referral += rowHTML("Referred By", values.referredBy);
+    referral += rowHTML("Phone Number", values.referrerPhone);
+    document.getElementById('referralRows').innerHTML = referral;
 
     document.getElementById('loadingMsg').style.display = "none";
     document.getElementById('content').style.display = "";

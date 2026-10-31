@@ -35,7 +35,6 @@
 <div id="reviewRoot">
   <p class="loading" id="loadingMsg">Loading your answers…</p>
   <div id="content" style="display:none">
-    <p class="welcome-body">Here's a look at the information you've shared. Take a moment to make sure everything accurately reflects your needs and preferences. You also have the option to print a copy of your responses for your records before moving forward.</p>
     <div id="rows"></div>
     <div class="bubble" id="bubble" style="display:none">
       <h2 id="bubbleHeading"></h2>
@@ -215,6 +214,10 @@
       });
       refresh();
       setTimeout(refresh, 1200);
+      /* Keep the card live: if the person goes back and changes an
+         answer, the mirrors update but no bridge event reaches this
+         frame — poll so the review always reflects the latest answers. */
+      setInterval(refresh, 2500);
     });
     document.addEventListener("visibilitychange", function(){ if(!document.hidden) refresh(); });
     window.addEventListener("focus", refresh);

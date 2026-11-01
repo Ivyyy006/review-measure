@@ -175,7 +175,7 @@
           printDocument.getElementById('reviewRoot').getBoundingClientRect().height
         ));
         printFrame.style.height = Math.max(measuredHeight, 1) + 'px';
-        printWindow.requestAnimationFrame(function(){
+        window.requestAnimationFrame(function(){
           try{
             printWindow.focus();
             printWindow.print();

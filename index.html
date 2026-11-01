@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Review Answers — display widget v1.15 (clone build)</title>
+<title>Review Answers — display widget v1.16 (clone build)</title>
 <style>
   :root{
     --forest:#244536; --gold:#C3A263; --ivory:#F8F6F0; --sage:#DCE5DA;
@@ -61,6 +61,7 @@
      as fallback. */
   var NAMES = {
     reason:"q89_mirrorReason", status:"q90_mirrorStatus",
+    provider:"q62_whoIs", providerOther:"q63_typeA63",
     people:"q15_howMany", zip:"q39_whatIs39", county:"q34_whatCounty",
     income:"q91_mirrorIncome", taxHousehold:"q17_howMany17",
     priorities:"q92_mirrorPriorities", addonGate:"q93_mirrorAddon",
@@ -218,6 +219,12 @@
     var rows = "";
     rows += rowHTML("Reason for Your Inquiry", values.reason);
     rows += rowHTML("Current Insurance Status", values.status);
+    /* Provider rows added 2026-11-01 (TAX caught them missing):
+       q62 is a dropdown and q63 a short text — both read directly,
+       no mirror needed. Each hides when unanswered, so the
+       uninsured paths never show them. */
+    rows += rowHTML("Current Health Insurance Provider", values.provider);
+    rows += rowHTML("Please Specify", values.providerOther);
     rows += rowHTML("Coverage Requested For", values.people);
     rows += rowHTML("ZIP Code", values.zip);
     rows += rowHTML("County", values.county);

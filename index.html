@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Review Answers — display widget v1.4 (clone build)</title>
+<title>Review Answers — display widget v1.5 (clone build)</title>
 <style>
   :root{
     --forest:#244536; --gold:#C3A263; --ivory:#F8F6F0; --sage:#DCE5DA;
@@ -28,6 +28,12 @@
   .bubble p{font-size:14.5px;line-height:1.55;margin:0;}
   .contact{margin-top:14px;border-top:2px solid var(--sage);padding-top:12px;}
   .loading{font-size:14px;color:#777;margin:6px 0;}
+  .printbar{text-align:center;padding:16px 0 4px;}
+  .printbtn{display:inline-block;background:transparent;border:none;cursor:pointer;
+    font-family:'Caudex',Georgia,serif;font-size:18px;color:var(--charcoal);
+    text-decoration:none;padding:10px 18px 12px;line-height:1;}
+  .printbtn .u{display:block;width:104px;height:9px;margin:2px auto 0;
+    border-bottom:2px solid var(--gold);border-radius:50%;}
 </style>
 <script src="https://cdn.jotfor.ms/s/umd/latest/for-custom-widgets.js"></script>
 </head>
@@ -42,6 +48,7 @@
     </div>
     <div class="contact" id="contactRows"></div>
     <div id="referralRows"></div>
+    <div class="printbar"><a class="printbtn" id="printLink" href="#" target="_blank" rel="noopener">Print<span class="u"></span></a></div>
   </div>
 </div>
 <script>
@@ -137,6 +144,31 @@
     return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
   }
 
+  function collectRows(id){
+    /* Snapshot exactly what the card is showing (headings + rendered
+       answer HTML) so the print page reproduces the card 1:1. */
+    var out = [], el = document.getElementById(id);
+    if(!el) return out;
+    var rows = el.querySelectorAll('.row');
+    for(var i=0;i<rows.length;i++){
+      var q = rows[i].querySelector('.q'), a = rows[i].querySelector('.a');
+      if(q && a) out.push({ h:q.textContent, html:a.innerHTML });
+    }
+    return out;
+  }
+  function updatePrintLink(){
+    var link = document.getElementById('printLink');
+    if(!link) return;
+    var payload = { rows:collectRows('rows'), contact:collectRows('contactRows'),
+      referral:collectRows('referralRows'), bubble:null };
+    var bubble = document.getElementById('bubble');
+    if(bubble && bubble.style.display !== "none"){
+      payload.bubble = { h:document.getElementById('bubbleHeading').textContent,
+                         p:document.getElementById('bubbleBody').textContent };
+    }
+    link.href = "print.html#" + encodeURIComponent(JSON.stringify(payload));
+  }
+
   function render(){
     var rows = "";
     rows += rowHTML("Reason for Your Inquiry", values.reason);
@@ -179,6 +211,7 @@
 
     document.getElementById('loadingMsg').style.display = "none";
     document.getElementById('content').style.display = "";
+    updatePrintLink();
     resize();
   }
 

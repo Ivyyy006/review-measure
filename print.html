@@ -35,6 +35,7 @@
     border-radius:999px;cursor:pointer;font-family:'Caudex',Georgia,serif;
     font-size:15px;color:var(--forest);padding:8px 18px;margin:0 6px 8px;line-height:1.2;}
   .msg{font-size:15px;line-height:1.55;margin:6px 0;}
+  body.embedded .printbar{display:none!important;}
   @media print{
     .printbar{display:none!important;}
     #reviewRoot{border:none;border-radius:0;margin:0 auto;}
@@ -43,7 +44,7 @@
 </style>
 </head>
 <body>
-<div class="printbar"><button class="backbtn" id="backBtn" type="button">&larr; Back to your form</button><br><button class="printbtn" id="printBtn" type="button">Print<span class="u"></span></button></div>
+<div class="printbar"><button class="printbtn" id="printBtn" type="button">Print<span class="u"></span></button></div>
 <div id="reviewRoot">
   <div id="content">
     <div id="rows"></div>
@@ -71,13 +72,16 @@
       return '<div class="row"><p class="q">'+esc(r.h)+'</p><div class="a">'+r.html+'</div></div>';
     }).join("");
   }
-  var payload = null;
-  try{
-    if(location.hash.length > 1) payload = JSON.parse(decodeURIComponent(location.hash.slice(1)));
-  }catch(e){ payload = null; }
-  if(!payload){
-    document.getElementById('msg').style.display = "";
-  } else {
+  function renderFromHash(){
+    var payload = null;
+    try{
+      if(location.hash.length > 1) payload = JSON.parse(decodeURIComponent(location.hash.slice(1)));
+    }catch(e){ payload = null; }
+    if(!payload){
+      document.getElementById('msg').style.display = "";
+      return;
+    }
+    document.getElementById('msg').style.display = "none";
     document.getElementById('rows').innerHTML = rowsHTML(payload.rows);
     document.getElementById('contactRows').innerHTML = rowsHTML(payload.contact);
     document.getElementById('referralRows').innerHTML = rowsHTML(payload.referral);
@@ -85,27 +89,18 @@
       document.getElementById('bubbleHeading').textContent = payload.bubble.h;
       document.getElementById('bubbleBody').textContent = payload.bubble.p;
       document.getElementById('bubble').style.display = "";
+    } else {
+      document.getElementById('bubble').style.display = "none";
     }
-    window.addEventListener('load', function(){
-      setTimeout(function(){ try{ window.print(); }catch(e){} }, 600);
-    });
   }
+  /* Inside the form's print popup this page is embedded: the popup
+     provides the chrome (close + the form's own Print), so this
+     page's own bar hides. The card widget feeds the answers through
+     the hash and re-feeds on every change — re-render each time. */
+  if(window.self !== window.top) document.body.classList.add('embedded');
+  renderFromHash();
+  window.addEventListener('hashchange', renderFromHash);
   document.getElementById('printBtn').addEventListener('click', function(){ window.print(); });
-  /* Return trip: once printing finishes (or the print sheet is
-     dismissed), close this tab so the person lands back in the form,
-     which never moved. The Back button does the same on demand; if
-     the browser refuses to close a tab it didn't open by script, the
-     button says so instead of failing silently. */
-  window.addEventListener('afterprint', function(){
-    setTimeout(function(){ window.close(); }, 300);
-  });
-  document.getElementById('backBtn').addEventListener('click', function(){
-    var b = this;
-    window.close();
-    setTimeout(function(){
-      b.textContent = "You can close this tab — your form is still open behind it.";
-    }, 350);
-  });
 })();
 </script>
 </body>

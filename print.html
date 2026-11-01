@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Review Answers — Print</title>
+<style>
+  :root{
+    --forest:#244536; --gold:#C3A263; --ivory:#F8F6F0; --sage:#DCE5DA;
+    --charcoal:#303849;
+  }
+  html,body{margin:0;padding:0;background:#fff;}
+  body{font-family:'Caudex',Georgia,serif;color:var(--charcoal);}
+  #reviewRoot{background:#fff;border:1px solid var(--sage);border-radius:14px;
+    padding:22px 20px 18px;max-width:640px;margin:18px auto;box-sizing:border-box;}
+  .row{padding:10px 0;border-top:1px solid var(--ivory);}
+  .row:first-of-type{border-top:none;}
+  .q{font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--gold);
+     font-weight:700;margin:0 0 3px;}
+  .a{font-size:16px;line-height:1.45;color:var(--charcoal);margin:0;white-space:pre-wrap;}
+  .a ul{margin:2px 0 0;padding-left:18px;}
+  .a li{margin:1px 0;}
+  .bubble{background:var(--ivory);border:1px solid var(--sage);border-radius:12px;
+    padding:14px 16px;margin:16px 0 6px;}
+  .bubble h2{font-size:17px;color:var(--forest);margin:0 0 5px;font-weight:700;}
+  .bubble p{font-size:14.5px;line-height:1.55;margin:0;}
+  .contact{margin-top:14px;border-top:2px solid var(--sage);padding-top:12px;}
+  .printbar{text-align:center;padding:14px 0 2px;}
+  .printbtn{display:inline-block;background:transparent;border:none;cursor:pointer;
+    font-family:'Caudex',Georgia,serif;font-size:18px;color:var(--charcoal);
+    padding:10px 18px 12px;line-height:1;}
+  .printbtn .u{display:block;width:104px;height:9px;margin:2px auto 0;
+    border-bottom:2px solid var(--gold);border-radius:50%;}
+  .msg{font-size:15px;line-height:1.55;margin:6px 0;}
+  @media print{
+    .printbar{display:none!important;}
+    #reviewRoot{border:none;border-radius:0;margin:0 auto;}
+    .row,.bubble{page-break-inside:avoid;}
+  }
+</style>
+</head>
+<body>
+<div class="printbar"><button class="printbtn" id="printBtn" type="button">Print<span class="u"></span></button></div>
+<div id="reviewRoot">
+  <div id="content">
+    <div id="rows"></div>
+    <div class="bubble" id="bubble" style="display:none">
+      <h2 id="bubbleHeading"></h2>
+      <p id="bubbleBody"></p>
+    </div>
+    <div class="contact" id="contactRows"></div>
+    <div id="referralRows"></div>
+  </div>
+  <p class="msg" id="msg" style="display:none">This page receives your answers from the Review Answers card in the form. Open the form, tap Review Answers, then tap Print at the bottom of the card.</p>
+</div>
+<script>
+(function(){
+  "use strict";
+  function esc(s){
+    return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+  function rowsHTML(list){
+    if(!list || !list.length) return "";
+    return list.map(function(r){
+      /* r.html is the card's own rendered answer HTML (already escaped
+         when the card built it) — reuse it verbatim so this page matches
+         the card exactly, lists included. */
+      return '<div class="row"><p class="q">'+esc(r.h)+'</p><div class="a">'+r.html+'</div></div>';
+    }).join("");
+  }
+  var payload = null;
+  try{
+    if(location.hash.length > 1) payload = JSON.parse(decodeURIComponent(location.hash.slice(1)));
+  }catch(e){ payload = null; }
+  if(!payload){
+    document.getElementById('msg').style.display = "";
+  } else {
+    document.getElementById('rows').innerHTML = rowsHTML(payload.rows);
+    document.getElementById('contactRows').innerHTML = rowsHTML(payload.contact);
+    document.getElementById('referralRows').innerHTML = rowsHTML(payload.referral);
+    if(payload.bubble){
+      document.getElementById('bubbleHeading').textContent = payload.bubble.h;
+      document.getElementById('bubbleBody').textContent = payload.bubble.p;
+      document.getElementById('bubble').style.display = "";
+    }
+    window.addEventListener('load', function(){
+      setTimeout(function(){ try{ window.print(); }catch(e){} }, 600);
+    });
+  }
+  document.getElementById('printBtn').addEventListener('click', function(){ window.print(); });
+})();
+</script>
+</body>
+</html>

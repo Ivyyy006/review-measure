@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Review Answers — display widget v1.16 (clone build)</title>
+<title>Review Answers — display widget v1.17 (clone build)</title>
 <style>
   :root{
     --forest:#244536; --gold:#C3A263; --ivory:#F8F6F0; --sage:#DCE5DA;
@@ -219,12 +219,16 @@
     var rows = "";
     rows += rowHTML("Reason for Your Inquiry", values.reason);
     rows += rowHTML("Current Insurance Status", values.status);
-    /* Provider rows added 2026-11-01 (TAX caught them missing):
+    /* Provider row added 2026-11-01 (TAX caught it missing):
        q62 is a dropdown and q63 a short text — both read directly,
-       no mirror needed. Each hides when unanswered, so the
-       uninsured paths never show them. */
-    rows += rowHTML("Current Health Insurance Provider", values.provider);
-    rows += rowHTML("Please Specify", values.providerOther);
+       no mirror needed. TAX's display rule: ONE provider row only.
+       If the lead picked "Other" and typed their carrier, the
+       typed carrier is the answer and is what shows — never
+       "Other", never a second "Please Specify" row. A carrier
+       picked from the list shows as itself. The row hides when
+       neither is answered, so uninsured paths never show it. */
+    var providerAnswer = !isEmpty(values.providerOther) ? values.providerOther : values.provider;
+    rows += rowHTML("Current Health Insurance Provider", providerAnswer);
     rows += rowHTML("Coverage Requested For", values.people);
     rows += rowHTML("ZIP Code", values.zip);
     rows += rowHTML("County", values.county);

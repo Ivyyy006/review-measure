@@ -137,6 +137,35 @@
     message.style.display = '';
   }
 
+  /* iPhone/in-app printing may choose the parent form. Prepare the existing
+     same-origin display widget for that path, without reading or modifying
+     the cross-origin Jotform document. Its iframe height is already managed
+     by Jotform's supported widget SDK. This CSS applies to print only. */
+  function prepareParentPrintFallback(styles){
+    var prepared = false;
+    try{
+      var siblings = window.parent.frames;
+      for(var i=0;i<siblings.length;i++){
+        try{
+          if(siblings[i] === window) continue;
+          var reviewDocument = siblings[i].document;
+          if(!reviewDocument.getElementById('reviewRoot') ||
+             !reviewDocument.querySelector('script[src*="for-custom-widgets"]')) continue;
+          var printStyle = reviewDocument.getElementById('ivana-parent-review-print');
+          if(!printStyle){
+            printStyle = reviewDocument.createElement('style');
+            printStyle.id = 'ivana-parent-review-print';
+            printStyle.media = 'print';
+            reviewDocument.head.appendChild(printStyle);
+          }
+          printStyle.textContent = styles;
+          prepared = true;
+        }catch(e){}
+      }
+    }catch(e){}
+    printButton.setAttribute('data-parent-print-ready', prepared ? 'true' : 'false');
+  }
+
   printButton.addEventListener('click', function(){
     if(preparingPrint) return;
     var content = document.getElementById('content');
@@ -149,6 +178,7 @@
     var styles = Array.prototype.map.call(document.querySelectorAll('style'), function(style){
       return style.textContent;
     }).join('\n');
+    prepareParentPrintFallback(styles);
     var printFrame = document.createElement('iframe');
     activePrintFrame = printFrame;
     printFrame.title = 'Review Answers print document';

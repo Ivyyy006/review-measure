@@ -35,7 +35,6 @@
     border-radius:999px;cursor:pointer;font-family:'Caudex',Georgia,serif;
     font-size:15px;color:var(--forest);padding:8px 18px;margin:0 6px 8px;line-height:1.2;}
   .msg{font-size:15px;line-height:1.55;margin:6px 0;}
-  body.embedded .printbar{display:none!important;}
   @media print{
     .printbar{display:none!important;}
     #reviewRoot{border:none;border-radius:0;margin:0 auto;}
@@ -44,7 +43,6 @@
 </style>
 </head>
 <body>
-<div class="printbar"><button class="printbtn" id="printBtn" type="button">Print<span class="u"></span></button></div>
 <div id="reviewRoot">
   <div id="content">
     <div id="rows"></div>
@@ -55,7 +53,8 @@
     <div class="contact" id="contactRows"></div>
     <div id="referralRows"></div>
   </div>
-  <p class="msg" id="msg" style="display:none">This page receives your answers from the Review Answers card in the form. Open the form, tap Review Answers, then tap Print at the bottom of the card.</p>
+  <p class="msg" id="msg" style="display:none">This page receives your answers from the form. Open the form, tap Review Answers, and your review appears here with Print at the bottom.</p>
+  <div class="printbar"><button class="printbtn" id="printBtn" type="button">Print<span class="u"></span></button></div>
 </div>
 <script>
 (function(){
@@ -93,10 +92,12 @@
       document.getElementById('bubble').style.display = "none";
     }
   }
-  /* Inside the form's print popup this page is embedded: the popup
-     provides the chrome (close + the form's own Print), so this
-     page's own bar hides. The card widget feeds the answers through
-     the hash and re-feeds on every change — re-render each time. */
+  /* TAX's design (2026-11-01): Review Answers opens the source-code
+     pop-up with this page inside it — navy background, this page as
+     the white paragraph card, and THIS page's own Print button at
+     the BOTTOM of the paragraph is what prints. The display widget
+     feeds the answers through the hash and re-feeds on every
+     change — re-render each time. */
   renderFromHash();
   window.addEventListener('hashchange', renderFromHash);
   document.getElementById('printBtn').addEventListener('click', function(){ window.print(); });

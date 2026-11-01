@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Review Answers — display widget v1.14 (clone build)</title>
+<title>Review Answers — display widget v1.15 (clone build)</title>
 <style>
   :root{
     --forest:#244536; --gold:#C3A263; --ivory:#F8F6F0; --sage:#DCE5DA;
@@ -171,16 +171,13 @@
        (browsers can drop a print call that arrives detached from
        the user gesture); v1.7's immediate call from this same card
        fired every time.
-       v1.14 DIAGNOSTIC: before printing, the handler visibly marks
-       the button ("Printing…") and outlines the card. If a test
-       click produces that mark, clicks ARE landing and handlers
-       ARE running — and a missing sheet then means the print call
-       itself is being dropped in that browser. If the mark never
-       appears, the clicks are not reaching the button at all. */
-    var b = this;
-    b.innerHTML = 'Printing&hellip;';
-    var card = document.getElementById('card');
-    if(card) card.style.outline = '3px solid #C3A263';
+       v1.14's diagnostic settled it: MARK SEEN — the tap reaches
+       this handler (the button flipped to "Printing…") and the
+       print call then opened the browser's print sheet (the
+       modal dialog the test browser cannot display, which froze
+       its clicks exactly as in the v1.7 tests). v1.15 is the
+       clean shipping build: same handler, diagnostic marks
+       removed. */
     updatePrintFrame();
     try{ window.print(); }catch(e){}
   });

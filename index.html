@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Review Answers — display widget v1.6 (clone build)</title>
+<title>Review Answers — display widget v1.7 (clone build)</title>
 <style>
   :root{
     --forest:#244536; --gold:#C3A263; --ivory:#F8F6F0; --sage:#DCE5DA;
@@ -48,7 +48,7 @@
     </div>
     <div class="contact" id="contactRows"></div>
     <div id="referralRows"></div>
-    <div class="printbar"><a class="printbtn" id="printLink" href="#" target="_blank" rel="noopener">Print<span class="u"></span></a></div>
+    <div class="printbar"><button class="printbtn" id="printBtn" type="button">Print<span class="u"></span></button></div>
   </div>
 </div>
 <script>
@@ -78,7 +78,6 @@
       body:"Thank you for sharing your coverage preferences! Since your desired start date is a little further out, we'll reach out closer to your preferred date to review your options and help you take the next step." }
   };
   var values = {};       // key -> string
-  var printUrl = "";     // current print.html snapshot link (set on every render)
   var calendarEvt = {};  // 72/73 -> value from change events (fallback)
 
   function resize(){
@@ -145,40 +144,14 @@
     return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
   }
 
-  function collectRows(id){
-    /* Snapshot exactly what the card is showing (headings + rendered
-       answer HTML) so the print page reproduces the card 1:1. */
-    var out = [], el = document.getElementById(id);
-    if(!el) return out;
-    var rows = el.querySelectorAll('.row');
-    for(var i=0;i<rows.length;i++){
-      var q = rows[i].querySelector('.q'), a = rows[i].querySelector('.a');
-      if(q && a) out.push({ h:q.textContent, html:a.innerHTML });
-    }
-    return out;
+  function printReview(){
+    /* Fire the FORM page's print directly: a print() call from any
+       frame prints the top document, and the form's @media print
+       rules isolate this card — so the sheet shows the whole review
+       and the person never leaves the form. No tab, no navigation. */
+    try{ window.print(); }catch(e){}
   }
-  function updatePrintLink(){
-    var link = document.getElementById('printLink');
-    if(!link) return;
-    var payload = { rows:collectRows('rows'), contact:collectRows('contactRows'),
-      referral:collectRows('referralRows'), bubble:null };
-    var bubble = document.getElementById('bubble');
-    if(bubble && bubble.style.display !== "none"){
-      payload.bubble = { h:document.getElementById('bubbleHeading').textContent,
-                         p:document.getElementById('bubbleBody').textContent };
-    }
-    printUrl = "print.html#" + encodeURIComponent(JSON.stringify(payload));
-    link.href = printUrl;
-  }
-  /* Open the print page as a script-opened tab so it is allowed to
-     close itself after printing and drop the person straight back
-     into the form. If the popup is blocked, the plain link still
-     works as it did in v1.5. */
-  document.getElementById('printLink').addEventListener('click', function(e){
-    if(!printUrl) return;
-    var w = window.open(printUrl, '_blank');
-    if(w) e.preventDefault();
-  });
+  document.getElementById('printBtn').addEventListener('click', printReview);
 
   function render(){
     var rows = "";
@@ -222,7 +195,6 @@
 
     document.getElementById('loadingMsg').style.display = "none";
     document.getElementById('content').style.display = "";
-    updatePrintLink();
     resize();
   }
 

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Review Answers — display widget v1.11 (clone build)</title>
+<title>Review Answers — display widget v1.12 (clone build)</title>
 <style>
   :root{
     --forest:#244536; --gold:#C3A263; --ivory:#F8F6F0; --sage:#DCE5DA;
@@ -48,7 +48,7 @@
     </div>
     <div class="contact" id="contactRows"></div>
     <div id="referralRows"></div>
-    <div class="printbar"><a class="printbtn" id="printBtn" target="_top">Print<span class="u"></span></a></div>
+    <div class="printbar"><button class="printbtn" id="printBtn" type="button">Print<span class="u"></span></button></div>
   </div>
 </div>
 <script>
@@ -156,50 +156,18 @@
     }
     return out;
   }
-  function formUrlFromFrame(){
-    /* v1.11 — the form's address is BAKED IN for this build.
-       Why: v1.9 trusted the referrer (a www.jotform.com address —
-       tapping Print threw TAX onto Jotform's homepage), and v1.10
-       proved on desktop and phone that the widget frame receives
-       NO usable form ID in its own address and no exact form
-       referrer: Jotform's wrapper frames sit between the form page
-       and the widget, so the widget simply cannot discover which
-       form hosts it. But v1.9's failure also proved the steering
-       itself works — a tap inside the card CAN navigate the form
-       page — it just needs the RIGHT address. So each form gets a
-       build with its own address baked in (clone build here; the
-       live install bakes the live form's address the same way).
-       The query/referrer attempts stay below as harmless backups. */
-    try{
-      var q = window.location.search || "";
-      var m = q.match(/[?&](?:formID|formId|form_id)=(\d+)/);
-      if(m) return "https://form.jotform.com/" + m[1];
-      var ref = (document.referrer || "").split('#')[0];
-      if(/^https:\/\/form\.jotform\.com\/\d+$/.test(ref)) return ref;
-    }catch(e){}
-    return "https://form.jotform.com/263031945610148";
-  }
-  function armPrintButton(){
-    /* TAX's design, unchanged: the Print button sits at the bottom
-       of the card exactly as approved. It is a link whose target is
-       the form page itself, aimed at the print popup's anchor — the
-       same fragment trick the Privacy Policy link uses — so tapping
-       it opens the print popup INSIDE the form: no tab, no reload,
-       no visible URL. It is armed ONLY with a verified form
-       address; unarmed, its click is intercepted below and prints
-       from inside the form instead of navigating anywhere. */
-    try{
-      var btn = document.getElementById('printBtn');
-      var base = formUrlFromFrame();
-      if(btn && base) btn.href = base + "#ivanaPrintModal";
-    }catch(e){}
-  }
-  document.getElementById('printBtn').addEventListener('click', function(ev){
+  document.getElementById('printBtn').addEventListener('click', function(){
+    /* TAX's final design (2026-11-01): ONE tap on the card's Print
+       button prints the review — no popup step, no tab, nothing
+       leaves the form. The print page in field 102's frame already
+       holds these answers (the feeder keeps it current); refresh it
+       once more, give its render a beat to settle, then print the
+       form page. The form's @media print rules isolate that frame,
+       so the sheet is the review exactly as the print page lays it
+       out — the layout that printed perfectly as a tab in v1.5,
+       now sourced from inside the form. */
     updatePrintFrame();
-    if(!this.getAttribute('href')){
-      ev.preventDefault();
-      try{ window.print(); }catch(e){}
-    }
+    setTimeout(function(){ try{ window.print(); }catch(e){} }, 350);
   });
   var lastPrintHash = "";
   function updatePrintFrame(){
@@ -276,7 +244,6 @@
 
     document.getElementById('loadingMsg').style.display = "none";
     document.getElementById('content').style.display = "";
-    armPrintButton();
     updatePrintFrame();
     resize();
   }

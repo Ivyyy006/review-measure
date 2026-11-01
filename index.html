@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Review Answers — display widget v1.8 (clone build)</title>
+<title>Review Answers — display widget v1.9 (clone build)</title>
 <style>
   :root{
     --forest:#244536; --gold:#C3A263; --ivory:#F8F6F0; --sage:#DCE5DA;
@@ -48,6 +48,7 @@
     </div>
     <div class="contact" id="contactRows"></div>
     <div id="referralRows"></div>
+    <div class="printbar"><a class="printbtn" id="printBtn" target="_top">Print<span class="u"></span></a></div>
   </div>
 </div>
 <script>
@@ -155,6 +156,21 @@
     }
     return out;
   }
+  function armPrintButton(){
+    /* TAX's design, unchanged: the Print button sits at the bottom
+       of the card exactly as approved. It is a link whose target is
+       the form page itself, aimed at the print popup's anchor — the
+       same fragment trick the Privacy Policy link uses — so tapping
+       it opens the print popup INSIDE the form: no tab, no reload,
+       no visible URL. Its address is built from this frame's
+       referrer (the form page that hosts the widget), so the same
+       widget works on any copy of the form. */
+    try{
+      var base = (document.referrer || "").split('#')[0];
+      var btn = document.getElementById('printBtn');
+      if(btn && base && /jotform\.com/.test(base)) btn.href = base + "#ivanaPrintModal";
+    }catch(e){}
+  }
   var lastPrintHash = "";
   function updatePrintFrame(){
     /* The print popup (a paragraph modal, the Privacy Policy pattern)
@@ -230,6 +246,7 @@
 
     document.getElementById('loadingMsg').style.display = "none";
     document.getElementById('content').style.display = "";
+    armPrintButton();
     updatePrintFrame();
     resize();
   }

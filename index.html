@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Review Answers — display widget v1.5 (clone build)</title>
+<title>Review Answers — display widget v1.6 (clone build)</title>
 <style>
   :root{
     --forest:#244536; --gold:#C3A263; --ivory:#F8F6F0; --sage:#DCE5DA;
@@ -78,6 +78,7 @@
       body:"Thank you for sharing your coverage preferences! Since your desired start date is a little further out, we'll reach out closer to your preferred date to review your options and help you take the next step." }
   };
   var values = {};       // key -> string
+  var printUrl = "";     // current print.html snapshot link (set on every render)
   var calendarEvt = {};  // 72/73 -> value from change events (fallback)
 
   function resize(){
@@ -166,8 +167,18 @@
       payload.bubble = { h:document.getElementById('bubbleHeading').textContent,
                          p:document.getElementById('bubbleBody').textContent };
     }
-    link.href = "print.html#" + encodeURIComponent(JSON.stringify(payload));
+    printUrl = "print.html#" + encodeURIComponent(JSON.stringify(payload));
+    link.href = printUrl;
   }
+  /* Open the print page as a script-opened tab so it is allowed to
+     close itself after printing and drop the person straight back
+     into the form. If the popup is blocked, the plain link still
+     works as it did in v1.5. */
+  document.getElementById('printLink').addEventListener('click', function(e){
+    if(!printUrl) return;
+    var w = window.open(printUrl, '_blank');
+    if(w) e.preventDefault();
+  });
 
   function render(){
     var rows = "";

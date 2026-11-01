@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Review Answers — Print</title>
+<style>
+  :root{
+    --forest:#244536; --gold:#C3A263; --ivory:#F8F6F0; --sage:#DCE5DA;
+    --charcoal:#303849;
+  }
+  html,body{margin:0;padding:0;background:#fff;}
+  body{font-family:'Caudex',Georgia,serif;color:var(--charcoal);}
+  #reviewRoot{background:#fff;border:1px solid var(--sage);border-radius:14px;
+    padding:22px 20px 18px;max-width:640px;margin:18px auto;box-sizing:border-box;}
+  .row{padding:10px 0;border-top:1px solid var(--ivory);}
+  .row:first-of-type{border-top:none;}
+  .q{font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--gold);
+     font-weight:700;margin:0 0 3px;}
+  .a{font-size:16px;line-height:1.45;color:var(--charcoal);margin:0;white-space:pre-wrap;}
+  .a ul{margin:2px 0 0;padding-left:18px;}
+  .a li{margin:1px 0;}
+  .bubble{background:var(--ivory);border:1px solid var(--sage);border-radius:12px;
+    padding:14px 16px;margin:16px 0 6px;}
+  .bubble h2{font-size:17px;color:var(--forest);margin:0 0 5px;font-weight:700;}
+  .bubble p{font-size:14.5px;line-height:1.55;margin:0;}
+  .contact{margin-top:14px;border-top:2px solid var(--sage);padding-top:12px;}
+  .printbar{text-align:center;padding:14px 0 2px;}
+  .printbtn{display:inline-block;background:transparent;border:none;cursor:pointer;
+    font-family:'Caudex',Georgia,serif;font-size:18px;color:var(--charcoal);
+    padding:10px 18px 12px;line-height:1;}
+  .printbtn .u{display:block;width:104px;height:9px;margin:2px auto 0;
+    border-bottom:2px solid var(--gold);border-radius:50%;}
+  .backbtn{display:inline-block;background:var(--ivory);border:1px solid var(--sage);
+    border-radius:999px;cursor:pointer;font-family:'Caudex',Georgia,serif;
+    font-size:15px;color:var(--forest);padding:8px 18px;margin:0 6px 8px;line-height:1.2;}
+  .msg{font-size:15px;line-height:1.55;margin:6px 0;}
+  @media print{
+    @page{margin:12mm;}
+    html,body,#reviewRoot,#content,#rows,#contactRows,#referralRows{
+      position:static!important;
+      height:auto!important;
+      min-height:0!important;
+      max-height:none!important;
+      overflow:visible!important;
+      transform:none!important;
+    }
+    html,body{background:#fff!important;}
+    .printbar,#msg{display:none!important;}
+    #reviewRoot{
+      box-sizing:border-box!important;
+      width:100%!important;
+      max-width:none!important;
+      border:0!important;
+      border-radius:0!important;
+      box-shadow:none!important;
+      margin:0!important;
+      padding:0!important;
+    }
+    .row,.bubble,.contact{break-inside:auto;page-break-inside:auto;}
+    .q,.bubble h2{break-after:avoid;page-break-after:avoid;}
+    .a,.bubble p{orphans:3;widows:3;overflow-wrap:anywhere;}
+  }
+</style>
+</head>
+<body>
+<div id="reviewRoot">
+  <div id="content">
+    <div id="rows"></div>
+    <div class="bubble" id="bubble" style="display:none">
+      <h2 id="bubbleHeading"></h2>
+      <p id="bubbleBody"></p>
+    </div>
+    <div class="contact" id="contactRows"></div>
+    <div id="referralRows"></div>
+  </div>
+  <p class="msg" id="msg" style="display:none">This page receives your answers from the form. Open the form, tap Review Answers, and your review appears here with Print at the bottom.</p>
+  <div class="printbar"><button class="printbtn" id="printBtn" type="button">Print<span class="u"></span></button></div>
+</div>
+<script>
+(function(){
+  "use strict";
+  function esc(s){
+    return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+  function rowsHTML(list){
+    if(!list || !list.length) return "";
+    return list.map(function(r){
+      /* r.html is the card's own rendered answer HTML (already escaped
+         when the card built it) — reuse it verbatim so this page matches
+         the card exactly, lists included. */
+      return '<div class="row"><p class="q">'+esc(r.h)+'</p><div class="a">'+r.html+'</div></div>';
+    }).join("");
+  }
+  function renderFromHash(){
+    var payload = null;
+    try{
+      if(location.hash.length > 1) payload = JSON.parse(decodeURIComponent(location.hash.slice(1)));
+    }catch(e){ payload = null; }
+    if(!payload){
+      document.getElementById('msg').style.display = "";
+      return;
+    }
+    document.getElementById('msg').style.display = "none";
+    document.getElementById('rows').innerHTML = rowsHTML(payload.rows);
+    document.getElementById('contactRows').innerHTML = rowsHTML(payload.contact);
+    document.getElementById('referralRows').innerHTML = rowsHTML(payload.referral);
+    if(payload.bubble){
+      document.getElementById('bubbleHeading').textContent = payload.bubble.h;
+      document.getElementById('bubbleBody').textContent = payload.bubble.p;
+      document.getElementById('bubble').style.display = "";
+    } else {
+      document.getElementById('bubble').style.display = "none";
+    }
+  }
+  /* TAX's design (2026-11-01): Review Answers opens the source-code
+     pop-up with this page inside it — navy background, this page as
+     the white paragraph card, and THIS page's own Print button at
+     the BOTTOM of the paragraph is what prints. The display widget
+     feeds the answers through the hash and re-feeds on every
+     change — re-render each time. */
+  renderFromHash();
+  window.addEventListener('hashchange', renderFromHash);
+  /* Keep the applicant in the existing form and popup.
+     Only the review content is copied into an internal srcdoc print frame.
+     Its document URL is about:srcdoc, not the GitHub URL or answer fragment.
+     Browser-added print headers/footers remain controlled by the browser. */
+  var activePrintFrame = null;
+  var preparingPrint = false;
+  var printButton = document.getElementById('printBtn');
+
+  function printFailure(){
+    preparingPrint = false;
+    printButton.disabled = false;
+    var message = document.getElementById('msg');
+    message.textContent = 'Printing could not start. Please try Print again.';
+    message.style.display = '';
+  }
+
+  printButton.addEventListener('click', function(){
+    if(preparingPrint) return;
+    var content = document.getElementById('content');
+    if(!content || !content.querySelector('.row')) return;
+
+    preparingPrint = true;
+    printButton.disabled = true;
+    if(activePrintFrame) activePrintFrame.remove();
+
+    var styles = Array.prototype.map.call(document.querySelectorAll('style'), function(style){
+      return style.textContent;
+    }).join('\n');
+    var printFrame = document.createElement('iframe');
+    activePrintFrame = printFrame;
+    printFrame.title = 'Review Answers print document';
+    printFrame.tabIndex = -1;
+    printFrame.setAttribute('aria-hidden', 'true');
+    /* Keep it laid out offscreen. Do not use display:none or a scroll viewport. */
+    printFrame.style.cssText = 'position:fixed;left:-10000px;top:0;width:720px;height:1px;border:0;pointer-events:none;';
+
+    printFrame.addEventListener('error', printFailure, {once:true});
+    printFrame.addEventListener('load', function(){
+      if(activePrintFrame !== printFrame) return;
+      var printDocument = printFrame.contentDocument;
+      var printWindow = printFrame.contentWindow;
+      if(!printDocument || !printWindow || !printDocument.getElementById('reviewRoot')){
+        printFailure();
+        return;
+      }
+      var ready = printDocument.fonts ? printDocument.fonts.ready : Promise.resolve();
+      ready.then(function(){
+        if(activePrintFrame !== printFrame) return;
+        var measuredHeight = Math.ceil(Math.max(
+          printDocument.documentElement.scrollHeight,
+          printDocument.body.scrollHeight,
+          printDocument.getElementById('reviewRoot').getBoundingClientRect().height
+        ));
+        printFrame.style.height = Math.max(measuredHeight, 1) + 'px';
+        printWindow.requestAnimationFrame(function(){
+          try{
+            printWindow.focus();
+            printWindow.print();
+          }catch(e){
+            printFailure();
+            return;
+          }finally{
+            preparingPrint = false;
+            printButton.disabled = false;
+          }
+          /* Retain this one frame until the next print attempt. Safari can
+             return from print() before its print UI closes; immediate removal
+             could discard content while it is still being printed. */
+        });
+      }).catch(printFailure);
+    }, {once:true});
+
+    printFrame.srcdoc = '<!doctype html><html lang="en"><head>' +
+      '<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
+      '<title>Review Answers</title><style>' + styles +
+      '</style></head><body><div id="reviewRoot">' + content.outerHTML +
+      '</div></body></html>';
+    document.body.appendChild(printFrame);
+  });
+})();
+</script>
+</body>
+</html>

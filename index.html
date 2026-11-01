@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Review Answers — display widget v1.13 (clone build)</title>
+<title>Review Answers — display widget v1.14 (clone build)</title>
 <style>
   :root{
     --forest:#244536; --gold:#C3A263; --ivory:#F8F6F0; --sage:#DCE5DA;
@@ -170,7 +170,17 @@
        v1.12 delayed it 350ms and the sheet never fired in testing
        (browsers can drop a print call that arrives detached from
        the user gesture); v1.7's immediate call from this same card
-       fired every time. */
+       fired every time.
+       v1.14 DIAGNOSTIC: before printing, the handler visibly marks
+       the button ("Printing…") and outlines the card. If a test
+       click produces that mark, clicks ARE landing and handlers
+       ARE running — and a missing sheet then means the print call
+       itself is being dropped in that browser. If the mark never
+       appears, the clicks are not reaching the button at all. */
+    var b = this;
+    b.innerHTML = 'Printing&hellip;';
+    var card = document.getElementById('card');
+    if(card) card.style.outline = '3px solid #C3A263';
     updatePrintFrame();
     try{ window.print(); }catch(e){}
   });

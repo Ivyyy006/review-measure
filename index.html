@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Review Answers — display widget v1.9 (clone build)</title>
+<title>Review Answers — display widget v1.10 (clone build)</title>
 <style>
   :root{
     --forest:#244536; --gold:#C3A263; --ivory:#F8F6F0; --sage:#DCE5DA;
@@ -156,21 +156,46 @@
     }
     return out;
   }
+  function formUrlFromFrame(){
+    /* The widget's own address is the one thing this frame always
+       knows. Jotform passes the hosting form's ID in the widget
+       address's query — build the form's address from that, never
+       from the referrer: v1.9 trusted the referrer, which turned
+       out to be a www.jotform.com address, and tapping Print threw
+       the person onto Jotform's homepage (TAX's repro, 2026-11-01
+       00:12). The strict referrer check below is only a backup and
+       accepts nothing but an exact form address. */
+    try{
+      var q = window.location.search || "";
+      var m = q.match(/[?&](?:formID|formId|form_id)=(\d+)/);
+      if(m) return "https://form.jotform.com/" + m[1];
+      var ref = (document.referrer || "").split('#')[0];
+      if(/^https:\/\/form\.jotform\.com\/\d+$/.test(ref)) return ref;
+    }catch(e){}
+    return "";
+  }
   function armPrintButton(){
     /* TAX's design, unchanged: the Print button sits at the bottom
        of the card exactly as approved. It is a link whose target is
        the form page itself, aimed at the print popup's anchor — the
        same fragment trick the Privacy Policy link uses — so tapping
        it opens the print popup INSIDE the form: no tab, no reload,
-       no visible URL. Its address is built from this frame's
-       referrer (the form page that hosts the widget), so the same
-       widget works on any copy of the form. */
+       no visible URL. It is armed ONLY with a verified form
+       address; unarmed, its click is intercepted below and prints
+       from inside the form instead of navigating anywhere. */
     try{
-      var base = (document.referrer || "").split('#')[0];
       var btn = document.getElementById('printBtn');
-      if(btn && base && /jotform\.com/.test(base)) btn.href = base + "#ivanaPrintModal";
+      var base = formUrlFromFrame();
+      if(btn && base) btn.href = base + "#ivanaPrintModal";
     }catch(e){}
   }
+  document.getElementById('printBtn').addEventListener('click', function(ev){
+    updatePrintFrame();
+    if(!this.getAttribute('href')){
+      ev.preventDefault();
+      try{ window.print(); }catch(e){}
+    }
+  });
   var lastPrintHash = "";
   function updatePrintFrame(){
     /* The print popup (a paragraph modal, the Privacy Policy pattern)

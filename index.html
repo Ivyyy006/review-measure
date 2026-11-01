@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Review Answers — display widget v1.12 (clone build)</title>
+<title>Review Answers — display widget v1.13 (clone build)</title>
 <style>
   :root{
     --forest:#244536; --gold:#C3A263; --ivory:#F8F6F0; --sage:#DCE5DA;
@@ -160,14 +160,19 @@
     /* TAX's final design (2026-11-01): ONE tap on the card's Print
        button prints the review — no popup step, no tab, nothing
        leaves the form. The print page in field 102's frame already
-       holds these answers (the feeder keeps it current); refresh it
-       once more, give its render a beat to settle, then print the
-       form page. The form's @media print rules isolate that frame,
-       so the sheet is the review exactly as the print page lays it
-       out — the layout that printed perfectly as a tab in v1.5,
-       now sourced from inside the form. */
+       holds these answers (the feeder's 2.5s poll keeps it
+       current); refresh it once more, then print the form page.
+       The form's @media print rules isolate that frame, so the
+       sheet is the review exactly as the print page lays it out —
+       the layout that printed perfectly as a tab in v1.5, now
+       sourced from inside the form.
+       v1.13: the print call is SYNCHRONOUS, inside the tap itself.
+       v1.12 delayed it 350ms and the sheet never fired in testing
+       (browsers can drop a print call that arrives detached from
+       the user gesture); v1.7's immediate call from this same card
+       fired every time. */
     updatePrintFrame();
-    setTimeout(function(){ try{ window.print(); }catch(e){} }, 350);
+    try{ window.print(); }catch(e){}
   });
   var lastPrintHash = "";
   function updatePrintFrame(){

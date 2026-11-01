@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Review Answers — display widget v1.7 (clone build)</title>
+<title>Review Answers — display widget v1.8 (clone build)</title>
 <style>
   :root{
     --forest:#244536; --gold:#C3A263; --ivory:#F8F6F0; --sage:#DCE5DA;
@@ -48,7 +48,6 @@
     </div>
     <div class="contact" id="contactRows"></div>
     <div id="referralRows"></div>
-    <div class="printbar"><button class="printbtn" id="printBtn" type="button">Print<span class="u"></span></button></div>
   </div>
 </div>
 <script>
@@ -144,14 +143,50 @@
     return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
   }
 
-  function printReview(){
-    /* Fire the FORM page's print directly: a print() call from any
-       frame prints the top document, and the form's @media print
-       rules isolate this card — so the sheet shows the whole review
-       and the person never leaves the form. No tab, no navigation. */
-    try{ window.print(); }catch(e){}
+  function collectRows(id){
+    /* Snapshot exactly what the card is showing (headings + rendered
+       answer HTML) so the print page reproduces the card 1:1. */
+    var out = [], el = document.getElementById(id);
+    if(!el) return out;
+    var rows = el.querySelectorAll('.row');
+    for(var i=0;i<rows.length;i++){
+      var q = rows[i].querySelector('.q'), a = rows[i].querySelector('.a');
+      if(q && a) out.push({ h:q.textContent, html:a.innerHTML });
+    }
+    return out;
   }
-  document.getElementById('printBtn').addEventListener('click', printReview);
+  var lastPrintHash = "";
+  function updatePrintFrame(){
+    /* The print popup (a paragraph modal, the Privacy Policy pattern)
+       holds an iframe with the print page. That page lives on the
+       same GitHub origin as this widget, so this frame can find the
+       sibling print frame among the form's frames and hand it the
+       current answers through its hash; the print page re-renders on
+       every hash change. The form page itself is never touched. */
+    try{
+      var payload = { rows:collectRows('rows'), contact:collectRows('contactRows'),
+        referral:collectRows('referralRows'), bubble:null };
+      var bubble = document.getElementById('bubble');
+      if(bubble && bubble.style.display !== "none"){
+        payload.bubble = { h:document.getElementById('bubbleHeading').textContent,
+                           p:document.getElementById('bubbleBody').textContent };
+      }
+      var hash = encodeURIComponent(JSON.stringify(payload));
+      if(hash === lastPrintHash) return;
+      var frames = window.parent && window.parent.frames;
+      if(!frames) return;
+      for(var i=0;i<frames.length;i++){
+        try{
+          var loc = frames[i].location;
+          if(loc && /print\.html/.test(loc.href)){
+            if(loc.hash !== "#" + hash) loc.hash = hash;
+            lastPrintHash = hash;
+            break;
+          }
+        }catch(e){}
+      }
+    }catch(e){}
+  }
 
   function render(){
     var rows = "";
@@ -195,6 +230,7 @@
 
     document.getElementById('loadingMsg').style.display = "none";
     document.getElementById('content').style.display = "";
+    updatePrintFrame();
     resize();
   }
 

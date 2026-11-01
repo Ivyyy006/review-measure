@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Review Answers — display widget v1.10 (clone build)</title>
+<title>Review Answers — display widget v1.11 (clone build)</title>
 <style>
   :root{
     --forest:#244536; --gold:#C3A263; --ivory:#F8F6F0; --sage:#DCE5DA;
@@ -157,14 +157,19 @@
     return out;
   }
   function formUrlFromFrame(){
-    /* The widget's own address is the one thing this frame always
-       knows. Jotform passes the hosting form's ID in the widget
-       address's query — build the form's address from that, never
-       from the referrer: v1.9 trusted the referrer, which turned
-       out to be a www.jotform.com address, and tapping Print threw
-       the person onto Jotform's homepage (TAX's repro, 2026-11-01
-       00:12). The strict referrer check below is only a backup and
-       accepts nothing but an exact form address. */
+    /* v1.11 — the form's address is BAKED IN for this build.
+       Why: v1.9 trusted the referrer (a www.jotform.com address —
+       tapping Print threw TAX onto Jotform's homepage), and v1.10
+       proved on desktop and phone that the widget frame receives
+       NO usable form ID in its own address and no exact form
+       referrer: Jotform's wrapper frames sit between the form page
+       and the widget, so the widget simply cannot discover which
+       form hosts it. But v1.9's failure also proved the steering
+       itself works — a tap inside the card CAN navigate the form
+       page — it just needs the RIGHT address. So each form gets a
+       build with its own address baked in (clone build here; the
+       live install bakes the live form's address the same way).
+       The query/referrer attempts stay below as harmless backups. */
     try{
       var q = window.location.search || "";
       var m = q.match(/[?&](?:formID|formId|form_id)=(\d+)/);
@@ -172,7 +177,7 @@
       var ref = (document.referrer || "").split('#')[0];
       if(/^https:\/\/form\.jotform\.com\/\d+$/.test(ref)) return ref;
     }catch(e){}
-    return "";
+    return "https://form.jotform.com/263031945610148";
   }
   function armPrintButton(){
     /* TAX's design, unchanged: the Print button sits at the bottom

@@ -97,7 +97,6 @@
      provides the chrome (close + the form's own Print), so this
      page's own bar hides. The card widget feeds the answers through
      the hash and re-feeds on every change — re-render each time. */
-  if(window.self !== window.top) document.body.classList.add('embedded');
   renderFromHash();
   window.addEventListener('hashchange', renderFromHash);
   document.getElementById('printBtn').addEventListener('click', function(){ window.print(); });

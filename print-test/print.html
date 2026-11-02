@@ -103,6 +103,7 @@
       document.getElementById('msg').style.display = "";
       return;
     }
+    document.getElementById('reviewRoot').setAttribute('data-consent-proof',JSON.stringify(payload.consentProof||[]));
     document.getElementById('msg').style.display = "none";
     document.getElementById('rows').innerHTML = rowsHTML(payload.rows);
     document.getElementById('contactRows').innerHTML = rowsHTML(payload.contact);

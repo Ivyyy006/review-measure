@@ -3,11 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Review Answers — display widget v1.18 (clone build)</title>
+<link href="https://fonts.googleapis.com/css2?family=Caudex:wght@400;700&display=swap" rel="stylesheet">
+<title>Review Answers — display widget v1.17 (clone build)</title>
 <style>
   :root{
     --forest:#244536; --gold:#C3A263; --ivory:#F8F6F0; --sage:#DCE5DA;
-    --charcoal:#303849; --answer:#587C46; --ink:#182D3C; --sageLine:#A7BBAB;
+    --charcoal:#303849; --answer:#587C46; --ink:#182D3C;
   }
   html,body{margin:0;padding:0;background:transparent;}
   body{font-family:'Caudex',Georgia,serif;color:var(--charcoal);}
@@ -15,28 +16,30 @@
     padding:22px 20px 18px;max-width:640px;margin:0 auto;box-sizing:border-box;}
   h1.welcome{font-size:21px;line-height:1.3;color:var(--forest);margin:0 0 8px;font-weight:700;}
   p.welcome-body{font-size:14.5px;line-height:1.55;margin:0 0 18px;color:var(--charcoal);}
-  .row{padding:10px 0;border-top:1px solid var(--ivory);}
+  .row{padding:10px 0;border-top:1px solid #E5E8E3;}
   .row:first-of-type{border-top:none;}
-  .q{font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--gold);
-     font-weight:700;margin:0 0 3px;}
-  .a{font-size:16px;line-height:1.45;color:var(--charcoal);margin:0;white-space:pre-wrap;}
-  .a ul{margin:2px 0 0;padding-left:18px;}
-  .a li{margin:1px 0;}
-  .bubble{background:var(--ivory);border:1px solid var(--sage);border-radius:12px;
-    padding:14px 16px;margin:16px 0 6px;}
-  .bubble h2{font-size:17px;color:var(--forest);margin:0 0 5px;font-weight:700;}
-  .bubble p{font-size:14.5px;line-height:1.55;margin:0;}
-  .contact{margin-top:14px;border-top:2px solid var(--sage);padding-top:12px;}
+  .q{font-size:14px;letter-spacing:.04em;text-transform:uppercase;color:#4D665E;
+     font-weight:600;line-height:1.5;margin:0 0 3px;}
+  .a{font-size:14px;line-height:1.7;color:#303849;margin:0;white-space:pre-wrap;}
+  .a ul{margin:2px 0 0;padding-left:18px;list-style:none;}
+  .a li{position:relative;margin:1px 0;line-height:1.35;list-style:none;}
+  .a li::before{content:"";position:absolute;left:-18px;top:calc((1.35em - 12px)/2);width:12px;height:12px;box-sizing:border-box;border:1.5px solid #A7BBAB;border-radius:50%;background:#F8F6F0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .bubble{background:#F8F6F0;border:1px solid #DCE5DA;border-radius:10px;
+    padding:16px 14px;margin:16px 0 6px;text-align:left;}
+  .bubble h2{font-size:19px;color:#788D67;margin:0 0 5px;font-weight:600;line-height:1.35;text-align:left;}
+  .bubble p{font-size:14px;line-height:1.8;color:#708A7C;font-weight:400;margin:0;text-align:left;}
+  .contact{margin-top:14px;border-top:0;padding-top:12px;}
   /* Review confirmations (TAX, 2026-11-02): each consent listed
-     individually with a circular bullet — ivory fill, light-sage
-     outline; the checkmark and the text are charcoal, and the
-     checkmark appears only when that consent was actually given. */
+     individually in the contact section. The circle matches the
+     list bullet marks — same size, ivory fill, light-sage
+     outline — with a charcoal checkmark inside when that consent
+     was given; the answer text is charcoal. */
   .row.conf{display:flex;align-items:flex-start;gap:10px;}
-  .confdot{flex:0 0 auto;width:20px;height:20px;margin-top:1px;border-radius:50%;
-    background:var(--ivory);border:1.5px solid var(--sageLine);
+  .confdot{flex:0 0 auto;width:12px;height:12px;margin-top:6px;border-radius:50%;
+    background:#F8F6F0;border:1.5px solid #A7BBAB;-webkit-print-color-adjust:exact;print-color-adjust:exact;
     display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;}
   .confdot svg{display:block;}
-  .conftext{font-size:16px;line-height:1.45;color:var(--charcoal);}
+  .conftext{font-size:14px;line-height:1.7;color:#303849;}
   .loading{font-size:14px;color:#777;margin:6px 0;}
   .printbar{text-align:center;padding:16px 0 4px;}
   .printbtn{display:inline-block;background:transparent;border:none;cursor:pointer;
@@ -89,6 +92,30 @@
     over45:{ heading:"Let's Stay Connected!",
       body:"Thank you for sharing your coverage preferences! Since your desired start date is a little further out, we'll reach out closer to your preferred date to review your options and help you take the next step." }
   };
+  /* Consent confirmations (TAX, 2026-11-02): the privacy
+     acknowledgment (field 55) and each Consent to Contact option
+     (field 56) listed individually inside the contact section.
+     Mirrors 103/105 carry the copied answers; a distinctive phrase
+     from each option's own text decides its checkmark, so the
+     marks reflect what the applicant actually checked. Display
+     texts are the fields' own option wordings, with the Privacy
+     Policy shown as plain text. */
+  var CONFIRMATIONS = [
+    { mirror:"privacyMirror", probe:"acknowledge",
+      text:"I acknowledge that I have read and understand the Privacy Policy." },
+    { mirror:"consentsMirror", probe:"contacted by phone",
+      text:"I agree to be contacted by phone regarding my health insurance inquiry and available coverage options." },
+    { mirror:"consentsMirror", probe:"appointment confirmations",
+      text:"I agree to receive appointment confirmations and reminders by text and/or email." }
+  ];
+  var CHECK_SVG = '<svg width="8" height="7" viewBox="0 0 11 9" aria-hidden="true"><path d="M1 4.6 L4.1 7.6 L10 1.2" fill="none" stroke="#303849" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  function confRowHTML(c){
+    var src = String(values[c.mirror] || "").toLowerCase();
+    var on = src.indexOf(c.probe) !== -1;
+    return '<div class="row conf"><span class="confdot">' + (on ? CHECK_SVG : "") +
+      '</span><span class="conftext">' + escapeHtml(c.text) + '</span></div>';
+  }
+
   var values = {};       // key -> string
   var calendarEvt = {};  // 72/73 -> value from change events (fallback)
 
@@ -215,6 +242,7 @@
         payload.bubble = { h:document.getElementById('bubbleHeading').textContent,
                            p:document.getElementById('bubbleBody').textContent };
       }
+      payload.consentProof=consentProbeLog;
       var hash = encodeURIComponent(JSON.stringify(payload));
       if(hash === lastPrintHash) return;
       var frames = window.parent && window.parent.frames;
@@ -230,30 +258,6 @@
         }catch(e){}
       }
     }catch(e){}
-  }
-
-  /* Consent confirmations (TAX, 2026-11-02): the privacy
-     acknowledgment (field 55) and each Consent to Contact option
-     (field 56) listed individually inside the contact section.
-     Mirrors 103/105 carry the copied answers (conditions proven on
-     the clone 2026-11-02); a distinctive phrase from each option's
-     own text decides its checkmark, so the marks reflect what the
-     applicant actually checked. Display texts are the fields' own
-     option wordings, with the Privacy Policy shown as plain text. */
-  var CONFIRMATIONS = [
-    { mirror:"privacyMirror", probe:"acknowledge",
-      text:"I acknowledge that I have read and understand the Privacy Policy." },
-    { mirror:"consentsMirror", probe:"contacted by phone",
-      text:"I agree to be contacted by phone regarding my health insurance inquiry and available coverage options." },
-    { mirror:"consentsMirror", probe:"appointment confirmations",
-      text:"I agree to receive appointment confirmations and reminders by text and/or email." }
-  ];
-  var CHECK_SVG = '<svg width="11" height="9" viewBox="0 0 11 9" aria-hidden="true"><path d="M1 4.6 L4.1 7.6 L10 1.2" fill="none" stroke="#303849" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-  function confRowHTML(c){
-    var src = String(values[c.mirror] || "").toLowerCase();
-    var on = src.indexOf(c.probe) !== -1;
-    return '<div class="row conf"><span class="confdot">' + (on ? CHECK_SVG : "") +
-      '</span><span class="conftext">' + escapeHtml(c.text) + '</span></div>';
   }
 
   function render(){
@@ -338,8 +342,23 @@
       });
     }
   }
+
+  var consentProbeLog=[];
+  function recordConsentProbe(kind,data){
+    consentProbeLog.push({kind:kind,data:data});
+    consentProbeLog=consentProbeLog.slice(-100);
+    var node=document.getElementById('consent-read-proof');
+    if(!node){node=document.createElement('script');node.type='application/json';node.id='consent-read-proof';document.body.appendChild(node);}
+    node.textContent=JSON.stringify(consentProbeLog);
+  }
+  function probeConsents(){
+    try{JFCustomWidget.getFieldsValueByName(['q55_yourPrivacy','q55_yourPrivacy[]','q56_consentTo56','q56_consentTo56[]'],function(d){recordConsentProbe('names',d);});}catch(e){recordConsentProbe('names-error',String(e));}
+    if(typeof JFCustomWidget.getFieldsValueById==='function')try{JFCustomWidget.getFieldsValueById(['55','56'],function(d){recordConsentProbe('ids',d);});}catch(e){recordConsentProbe('ids-error',String(e));}
+  }
+
   function refresh(){
     if(!window.JFCustomWidget) return;
+    probeConsents();
     var names = Object.keys(NAMES).map(function(k){ return NAMES[k]; });
     try{
       JFCustomWidget.getFieldsValueByName(names, function(d){ absorb(d); render(); });
@@ -349,6 +368,7 @@
 
   if(window.JFCustomWidget && typeof JFCustomWidget.subscribe === "function"){
     JFCustomWidget.subscribe("ready", function(){
+      ['input_55_0','input_56_0','input_56_1'].forEach(function(id){try{JFCustomWidget.listenFromField(id,'change',function(d){recordConsentProbe(id,d);});}catch(e){recordConsentProbe(id+'-error',String(e));}});
       // Fallback: catch calendar dates live if their mirrors ever miss.
       ["72","73"].forEach(function(qid){
         try{

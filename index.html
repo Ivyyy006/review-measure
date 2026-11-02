@@ -295,8 +295,23 @@
       });
     }
   }
+
+  var consentProbeLog=[];
+  function recordConsentProbe(kind,data){
+    consentProbeLog.push({kind:kind,data:data});
+    consentProbeLog=consentProbeLog.slice(-100);
+    var node=document.getElementById('consent-read-proof');
+    if(!node){node=document.createElement('script');node.type='application/json';node.id='consent-read-proof';document.body.appendChild(node);}
+    node.textContent=JSON.stringify(consentProbeLog);
+  }
+  function probeConsents(){
+    try{JFCustomWidget.getFieldsValueByName(['q55_yourPrivacy','q55_yourPrivacy[]','q56_consentTo56','q56_consentTo56[]'],function(d){recordConsentProbe('names',d);});}catch(e){recordConsentProbe('names-error',String(e));}
+    if(typeof JFCustomWidget.getFieldsValueById==='function')try{JFCustomWidget.getFieldsValueById(['55','56'],function(d){recordConsentProbe('ids',d);});}catch(e){recordConsentProbe('ids-error',String(e));}
+  }
+
   function refresh(){
     if(!window.JFCustomWidget) return;
+    probeConsents();
     var names = Object.keys(NAMES).map(function(k){ return NAMES[k]; });
     try{
       JFCustomWidget.getFieldsValueByName(names, function(d){ absorb(d); render(); });
@@ -306,6 +321,7 @@
 
   if(window.JFCustomWidget && typeof JFCustomWidget.subscribe === "function"){
     JFCustomWidget.subscribe("ready", function(){
+      ['input_55_0','input_56_0','input_56_1'].forEach(function(id){try{JFCustomWidget.listenFromField(id,'change',function(d){recordConsentProbe(id,d);});}catch(e){recordConsentProbe(id+'-error',String(e));}});
       // Fallback: catch calendar dates live if their mirrors ever miss.
       ["72","73"].forEach(function(qid){
         try{

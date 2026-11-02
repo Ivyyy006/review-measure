@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Caudex:wght@400;700&display=swap" rel="stylesheet">
 <title>Review Answers — Print</title>
 <style>
   :root{
@@ -13,18 +14,19 @@
   body{font-family:'Caudex',Georgia,serif;color:var(--charcoal);}
   #reviewRoot{background:#fff;border:1px solid var(--sage);border-radius:14px;
     padding:22px 20px 18px;max-width:640px;margin:18px auto;box-sizing:border-box;}
-  .row{padding:10px 0;border-top:1px solid var(--ivory);}
+  .row{padding:10px 0;border-top:1px solid #E5E8E3;}
   .row:first-of-type{border-top:none;}
-  .q{font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--gold);
-     font-weight:700;margin:0 0 3px;}
-  .a{font-size:16px;line-height:1.45;color:var(--charcoal);margin:0;white-space:pre-wrap;}
-  .a ul{margin:2px 0 0;padding-left:18px;}
-  .a li{margin:1px 0;}
-  .bubble{background:var(--ivory);border:1px solid var(--sage);border-radius:12px;
-    padding:14px 16px;margin:16px 0 6px;}
-  .bubble h2{font-size:17px;color:var(--forest);margin:0 0 5px;font-weight:700;}
-  .bubble p{font-size:14.5px;line-height:1.55;margin:0;}
-  .contact{margin-top:14px;border-top:2px solid var(--sage);padding-top:12px;}
+  .q{font-size:14px;letter-spacing:.04em;text-transform:uppercase;color:#4D665E;
+     font-weight:600;line-height:1.5;margin:0 0 3px;}
+  .a{font-size:14px;line-height:1.7;color:#303849;margin:0;white-space:pre-wrap;}
+  .a ul{margin:2px 0 0;padding-left:18px;list-style:none;}
+  .a li{position:relative;margin:1px 0;line-height:1.35;list-style:none;}
+  .a li::before{content:"";position:absolute;left:-18px;top:calc((1.35em - 12px)/2);width:12px;height:12px;box-sizing:border-box;border:1.5px solid #A7BBAB;border-radius:50%;background:#F8F6F0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .bubble{background:#F8F6F0;border:1px solid #DCE5DA;border-radius:10px;
+    padding:16px 14px;margin:16px 0 6px;text-align:left;}
+  .bubble h2{font-size:19px;color:#788D67;margin:0 0 5px;font-weight:600;line-height:1.35;text-align:left;}
+  .bubble p{font-size:14px;line-height:1.8;color:#708A7C;font-weight:400;margin:0;text-align:left;}
+  .contact{margin-top:14px;border-top:0;padding-top:12px;}
   .printbar{text-align:center;padding:14px 0 2px;}
   .printbtn{display:inline-block;background:transparent;border:none;cursor:pointer;
     font-family:'Caudex',Georgia,serif;font-size:18px;color:var(--charcoal);
@@ -66,6 +68,7 @@
 <body>
 <div id="reviewRoot">
   <div id="content">
+    <section class="bubble welcome-box" id="welcomeMessage"><h2>Let’s Make Health Coverage Simpler</h2><p>Here’s a look at the information you’ve shared. Take a moment to make sure everything accurately reflects your needs and preferences. You also have the option to print a copy of your responses for your records before moving forward.</p></section>
     <div id="rows"></div>
     <div class="bubble" id="bubble" style="display:none">
       <h2 id="bubbleHeading"></h2>

@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Review Answers — display widget v1.17 (clone build)</title>
+<title>Review Answers — display widget v1.18 (clone build)</title>
 <style>
   :root{
     --forest:#244536; --gold:#C3A263; --ivory:#F8F6F0; --sage:#DCE5DA;
-    --charcoal:#303849; --answer:#587C46; --ink:#182D3C;
+    --charcoal:#303849; --answer:#587C46; --ink:#182D3C; --sageLine:#A7BBAB;
   }
   html,body{margin:0;padding:0;background:transparent;}
   body{font-family:'Caudex',Georgia,serif;color:var(--charcoal);}
@@ -27,6 +27,16 @@
   .bubble h2{font-size:17px;color:var(--forest);margin:0 0 5px;font-weight:700;}
   .bubble p{font-size:14.5px;line-height:1.55;margin:0;}
   .contact{margin-top:14px;border-top:2px solid var(--sage);padding-top:12px;}
+  /* Review confirmations (TAX, 2026-11-02): each consent listed
+     individually with a circular bullet — ivory fill, light-sage
+     outline; the checkmark and the text are charcoal, and the
+     checkmark appears only when that consent was actually given. */
+  .row.conf{display:flex;align-items:flex-start;gap:10px;}
+  .confdot{flex:0 0 auto;width:20px;height:20px;margin-top:1px;border-radius:50%;
+    background:var(--ivory);border:1.5px solid var(--sageLine);
+    display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;}
+  .confdot svg{display:block;}
+  .conftext{font-size:16px;line-height:1.45;color:var(--charcoal);}
   .loading{font-size:14px;color:#777;margin:6px 0;}
   .printbar{text-align:center;padding:16px 0 4px;}
   .printbtn{display:inline-block;background:transparent;border:none;cursor:pointer;
@@ -70,6 +80,7 @@
     startDate45:"q98_typeA98", startDate46:"q99_typeA99",
     fullName:"q10_name", phone:"q11_phoneNumber", email:"q12_email",
     appointment:"q97_mirrorAppointment",
+    privacyMirror:"q103_typeA103", consentsMirror:"q105_mirrorPrivacy",
     referredBy:"q37_whoCan", referrerPhone:"q36_phoneNumber36"
   };
   var BUBBLES = {
@@ -152,6 +163,12 @@
     if(!el) return out;
     var rows = el.querySelectorAll('.row');
     for(var i=0;i<rows.length;i++){
+      if(rows[i].className.indexOf("conf") !== -1){
+        /* Confirmation rows travel as raw innerHTML so the print
+           page reproduces the circle + checkmark exactly. */
+        out.push({ conf:true, h:"", html:rows[i].innerHTML });
+        continue;
+      }
       var q = rows[i].querySelector('.q'), a = rows[i].querySelector('.a');
       if(q && a) out.push({ h:q.textContent, html:a.innerHTML });
     }
@@ -215,6 +232,30 @@
     }catch(e){}
   }
 
+  /* Consent confirmations (TAX, 2026-11-02): the privacy
+     acknowledgment (field 55) and each Consent to Contact option
+     (field 56) listed individually inside the contact section.
+     Mirrors 103/105 carry the copied answers (conditions proven on
+     the clone 2026-11-02); a distinctive phrase from each option's
+     own text decides its checkmark, so the marks reflect what the
+     applicant actually checked. Display texts are the fields' own
+     option wordings, with the Privacy Policy shown as plain text. */
+  var CONFIRMATIONS = [
+    { mirror:"privacyMirror", probe:"acknowledge",
+      text:"I acknowledge that I have read and understand the Privacy Policy." },
+    { mirror:"consentsMirror", probe:"contacted by phone",
+      text:"I agree to be contacted by phone regarding my health insurance inquiry and available coverage options." },
+    { mirror:"consentsMirror", probe:"appointment confirmations",
+      text:"I agree to receive appointment confirmations and reminders by text and/or email." }
+  ];
+  var CHECK_SVG = '<svg width="11" height="9" viewBox="0 0 11 9" aria-hidden="true"><path d="M1 4.6 L4.1 7.6 L10 1.2" fill="none" stroke="#303849" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  function confRowHTML(c){
+    var src = String(values[c.mirror] || "").toLowerCase();
+    var on = src.indexOf(c.probe) !== -1;
+    return '<div class="row conf"><span class="confdot">' + (on ? CHECK_SVG : "") +
+      '</span><span class="conftext">' + escapeHtml(c.text) + '</span></div>';
+  }
+
   function render(){
     var rows = "";
     rows += rowHTML("Reason for Your Inquiry", values.reason);
@@ -258,6 +299,10 @@
     contact += rowHTML("Phone Number", values.phone);
     contact += rowHTML("E-mail", values.email);
     if(!over) contact += rowHTML("Appointment Details", values.appointment);
+    /* Confirmations close the contact section (TAX, 2026-11-02:
+       with the contact details — not at the bottom of the review
+       after the message bubble). */
+    CONFIRMATIONS.forEach(function(c){ contact += confRowHTML(c); });
     document.getElementById('contactRows').innerHTML = contact;
 
     var referral = "";

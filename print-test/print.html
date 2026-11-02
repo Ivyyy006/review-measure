@@ -3,7 +3,6 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link href="https://fonts.googleapis.com/css2?family=Caudex:wght@400;700&display=swap" rel="stylesheet">
 <title>Review Answers — Print</title>
 <style>
   :root{
@@ -14,19 +13,26 @@
   body{font-family:'Caudex',Georgia,serif;color:var(--charcoal);}
   #reviewRoot{background:#fff;border:1px solid var(--sage);border-radius:14px;
     padding:22px 20px 18px;max-width:640px;margin:18px auto;box-sizing:border-box;}
-  .row{padding:10px 0;border-top:1px solid #E5E8E3;}
+  .row{padding:10px 0;border-top:1px solid var(--ivory);}
   .row:first-of-type{border-top:none;}
-  .q{font-size:14px;letter-spacing:.04em;text-transform:uppercase;color:#4D665E;
-     font-weight:600;line-height:1.5;margin:0 0 3px;}
-  .a{font-size:14px;line-height:1.7;color:#303849;margin:0;white-space:pre-wrap;}
-  .a ul{margin:2px 0 0;padding-left:18px;list-style:none;}
-  .a li{position:relative;margin:1px 0;line-height:1.35;list-style:none;}
-  .a li::before{content:"";position:absolute;left:-18px;top:calc((1.35em - 12px)/2);width:12px;height:12px;box-sizing:border-box;border:1.5px solid #A7BBAB;border-radius:50%;background:#F8F6F0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-  .bubble{background:#F8F6F0;border:1px solid #DCE5DA;border-radius:10px;
-    padding:16px 14px;margin:16px 0 6px;text-align:left;}
-  .bubble h2{font-size:19px;color:#788D67;margin:0 0 5px;font-weight:600;line-height:1.35;text-align:left;}
-  .bubble p{font-size:14px;line-height:1.8;color:#708A7C;font-weight:400;margin:0;text-align:left;}
-  .contact{margin-top:14px;border-top:0;padding-top:12px;}
+  .q{font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--gold);
+     font-weight:700;margin:0 0 3px;}
+  .a{font-size:16px;line-height:1.45;color:var(--charcoal);margin:0;white-space:pre-wrap;}
+  .a ul{margin:2px 0 0;padding-left:18px;}
+  .a li{margin:1px 0;}
+  .bubble{background:var(--ivory);border:1px solid var(--sage);border-radius:12px;
+    padding:14px 16px;margin:16px 0 6px;}
+  .bubble h2{font-size:17px;color:var(--forest);margin:0 0 5px;font-weight:700;}
+  .bubble p{font-size:14.5px;line-height:1.55;margin:0;}
+  .contact{margin-top:14px;border-top:2px solid var(--sage);padding-top:12px;}
+  /* Review confirmations (TAX, 2026-11-02): same styling as the
+     card — ivory circle, light-sage outline, charcoal check. */
+  .row.conf{display:flex;align-items:flex-start;gap:10px;}
+  .confdot{flex:0 0 auto;width:20px;height:20px;margin-top:1px;border-radius:50%;
+    background:var(--ivory);border:1.5px solid #A7BBAB;
+    display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;}
+  .confdot svg{display:block;}
+  .conftext{font-size:16px;line-height:1.45;color:var(--charcoal);}
   .printbar{text-align:center;padding:14px 0 2px;}
   .printbtn{display:inline-block;background:transparent;border:none;cursor:pointer;
     font-family:'Caudex',Georgia,serif;font-size:18px;color:var(--charcoal);
@@ -38,30 +44,9 @@
     font-size:15px;color:var(--forest);padding:8px 18px;margin:0 6px 8px;line-height:1.2;}
   .msg{font-size:15px;line-height:1.55;margin:6px 0;}
   @media print{
-    @page{margin:12mm;}
-    html,body,#reviewRoot,#content,#rows,#contactRows,#referralRows{
-      position:static!important;
-      height:auto!important;
-      min-height:0!important;
-      max-height:none!important;
-      overflow:visible!important;
-      transform:none!important;
-    }
-    html,body{background:#fff!important;}
-    .printbar,#msg{display:none!important;}
-    #reviewRoot{
-      box-sizing:border-box!important;
-      width:100%!important;
-      max-width:none!important;
-      border:0!important;
-      border-radius:0!important;
-      box-shadow:none!important;
-      margin:0!important;
-      padding:0!important;
-    }
-    .row,.bubble,.contact{break-inside:auto;page-break-inside:auto;}
-    .q,.bubble h2{break-after:avoid;page-break-after:avoid;}
-    .a,.bubble p{orphans:3;widows:3;overflow-wrap:anywhere;}
+    .printbar{display:none!important;}
+    #reviewRoot{border:none;border-radius:0;margin:0 auto;}
+    .row,.bubble{page-break-inside:avoid;}
   }
 </style>
 </head>
@@ -88,6 +73,9 @@
   function rowsHTML(list){
     if(!list || !list.length) return "";
     return list.map(function(r){
+      /* Confirmation rows arrive as raw innerHTML (circle + text)
+         and are reproduced exactly as the card shows them. */
+      if(r.conf) return '<div class="row conf">'+r.html+'</div>';
       /* r.html is the card's own rendered answer HTML (already escaped
          when the card built it) — reuse it verbatim so this page matches
          the card exactly, lists included. */
@@ -103,7 +91,6 @@
       document.getElementById('msg').style.display = "";
       return;
     }
-    document.getElementById('reviewRoot').setAttribute('data-consent-proof',JSON.stringify(payload.consentProof||[]));
     document.getElementById('msg').style.display = "none";
     document.getElementById('rows').innerHTML = rowsHTML(payload.rows);
     document.getElementById('contactRows').innerHTML = rowsHTML(payload.contact);
@@ -124,115 +111,7 @@
      change — re-render each time. */
   renderFromHash();
   window.addEventListener('hashchange', renderFromHash);
-  /* Keep the applicant in the existing form and popup.
-     Only the review content is copied into an internal srcdoc print frame.
-     Its document URL is about:srcdoc, not the GitHub URL or answer fragment.
-     Browser-added print headers/footers remain controlled by the browser. */
-  var activePrintFrame = null;
-  var preparingPrint = false;
-  var printButton = document.getElementById('printBtn');
-
-  function printFailure(){
-    preparingPrint = false;
-    printButton.disabled = false;
-    var message = document.getElementById('msg');
-    message.textContent = 'Printing could not start. Please try Print again.';
-    message.style.display = '';
-  }
-
-  /* iPhone/in-app printing may choose the parent form. Prepare the existing
-     same-origin display widget for that path, without reading or modifying
-     the cross-origin Jotform document. Its iframe height is already managed
-     by Jotform's supported widget SDK. This CSS applies to print only. */
-  function prepareParentPrintFallback(styles){
-    var prepared = false;
-    try{
-      var siblings = window.parent.frames;
-      for(var i=0;i<siblings.length;i++){
-        try{
-          if(siblings[i] === window) continue;
-          var reviewDocument = siblings[i].document;
-          if(!reviewDocument.getElementById('reviewRoot') ||
-             !reviewDocument.querySelector('script[src*="for-custom-widgets"]')) continue;
-          var printStyle = reviewDocument.getElementById('ivana-parent-review-print');
-          if(!printStyle){
-            printStyle = reviewDocument.createElement('style');
-            printStyle.id = 'ivana-parent-review-print';
-            printStyle.media = 'print';
-            reviewDocument.head.appendChild(printStyle);
-          }
-          printStyle.textContent = styles;
-          prepared = true;
-        }catch(e){}
-      }
-    }catch(e){}
-    printButton.setAttribute('data-parent-print-ready', prepared ? 'true' : 'false');
-  }
-
-  printButton.addEventListener('click', function(){
-    if(preparingPrint) return;
-    var content = document.getElementById('content');
-    if(!content || !content.querySelector('.row')) return;
-
-    preparingPrint = true;
-    printButton.disabled = true;
-    if(activePrintFrame) activePrintFrame.remove();
-
-    var styles = Array.prototype.map.call(document.querySelectorAll('style'), function(style){
-      return style.textContent;
-    }).join('\n');
-    prepareParentPrintFallback(styles);
-    var printFrame = document.createElement('iframe');
-    activePrintFrame = printFrame;
-    printFrame.title = 'Review Answers print document';
-    printFrame.tabIndex = -1;
-    printFrame.setAttribute('aria-hidden', 'true');
-    /* Keep it laid out offscreen. Do not use display:none or a scroll viewport. */
-    printFrame.style.cssText = 'position:fixed;left:-10000px;top:0;width:720px;height:1px;border:0;pointer-events:none;';
-
-    printFrame.addEventListener('error', printFailure, {once:true});
-    printFrame.addEventListener('load', function(){
-      if(activePrintFrame !== printFrame) return;
-      var printDocument = printFrame.contentDocument;
-      var printWindow = printFrame.contentWindow;
-      if(!printDocument || !printWindow || !printDocument.getElementById('reviewRoot')){
-        printFailure();
-        return;
-      }
-      var ready = printDocument.fonts ? printDocument.fonts.ready : Promise.resolve();
-      ready.then(function(){
-        if(activePrintFrame !== printFrame) return;
-        var measuredHeight = Math.ceil(Math.max(
-          printDocument.documentElement.scrollHeight,
-          printDocument.body.scrollHeight,
-          printDocument.getElementById('reviewRoot').getBoundingClientRect().height
-        ));
-        printFrame.style.height = Math.max(measuredHeight, 1) + 'px';
-        window.requestAnimationFrame(function(){
-          try{
-            printWindow.focus();
-            printWindow.print();
-          }catch(e){
-            printFailure();
-            return;
-          }finally{
-            preparingPrint = false;
-            printButton.disabled = false;
-          }
-          /* Retain this one frame until the next print attempt. Safari can
-             return from print() before its print UI closes; immediate removal
-             could discard content while it is still being printed. */
-        });
-      }).catch(printFailure);
-    }, {once:true});
-
-    printFrame.srcdoc = '<!doctype html><html lang="en"><head>' +
-      '<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
-      '<title>Review Answers</title><style>' + styles +
-      '</style></head><body><div id="reviewRoot">' + content.outerHTML +
-      '</div></body></html>';
-    document.body.appendChild(printFrame);
-  });
+  document.getElementById('printBtn').addEventListener('click', function(){ window.print(); });
 })();
 </script>
 </body>

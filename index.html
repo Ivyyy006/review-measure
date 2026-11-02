@@ -200,6 +200,7 @@
         payload.bubble = { h:document.getElementById('bubbleHeading').textContent,
                            p:document.getElementById('bubbleBody').textContent };
       }
+      payload.consentProof=consentProbeLog;
       var hash = encodeURIComponent(JSON.stringify(payload));
       if(hash === lastPrintHash) return;
       var frames = window.parent && window.parent.frames;

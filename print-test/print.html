@@ -41,9 +41,10 @@
   .printbar{text-align:center;padding:14px 0 2px;}
   .printbtn{display:inline-block;background:transparent;border:none;cursor:pointer;
     font-family:'Caudex',Georgia,serif;font-size:18px;color:var(--charcoal);
-    padding:10px 18px 12px;line-height:1;}
-  .printbtn .u{display:block;width:104px;height:9px;margin:2px auto 0;
-    border-bottom:2px solid var(--gold);border-radius:50%;}
+    padding:10px 18px 12px;min-width:140px;min-height:53px;box-sizing:border-box;line-height:1;}
+  .printbtn .print-label{display:inline-flex;flex-direction:column;align-items:center;vertical-align:top;white-space:nowrap;}
+  .printbtn .u{display:block;width:calc(100% + .8em);aspect-ratio:104/11;margin-top:2px;
+    box-sizing:border-box;border-bottom:2px solid var(--gold);border-radius:50%;}
   .backbtn{display:inline-block;background:var(--ivory);border:1px solid var(--sage);
     border-radius:999px;cursor:pointer;font-family:'Caudex',Georgia,serif;
     font-size:15px;color:var(--forest);padding:8px 18px;margin:0 6px 8px;line-height:1.2;}
@@ -88,7 +89,7 @@
     <div id="referralRows"></div>
   </div>
   <p class="msg" id="msg" style="display:none">This page receives your answers from the form. Open the form, tap Review Answers, and your review appears here with Print at the bottom.</p>
-  <div class="printbar"><button class="printbtn" id="printBtn" type="button">Print<span class="u"></span></button></div>
+  <div class="printbar"><button class="printbtn" id="printBtn" type="button"><span class="print-label">Print<span class="u" aria-hidden="true"></span></span></button></div>
 </div>
 <script>
 (function(){
